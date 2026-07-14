@@ -1,4 +1,6 @@
 ﻿#include "List.h"
+#include "Array.h"
+#include "Vector.h"
 #include <iostream>
 
 int main()
@@ -18,4 +20,36 @@ int main()
 
     list.Insert<InsertPos::Front>(insertnode, 0);
     list.PrintAllNodes();
+    
+    Array<int, 5> array;
+
+    for (int i = 5; i >= 1; --i)
+    {
+        array.push_back(i);
+    }
+    
+    array.PrintAllElements();
+
+    Vector<int> vector;
+
+    for (int i = 1; i <= 5; ++i)
+    {
+        vector.push_back(i);
+    }
+
+    for (int i = 1; i <= 5; ++i)
+    {
+        vector.push_back(2 * i);
+    }
+
+    vector.PrintAllElements();
+
+    vector.clear();
+
+    for (int i = 1; i <= 5; ++i)
+    {
+        vector.push_back(3 * i);
+    }
+
+    vector.PrintAllElements();
 }

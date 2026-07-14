@@ -10,15 +10,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="List.cpp">
+      <Filter>DataStructure</Filter>
+    </ClCompile>
     <ClCompile Include="Maze.cpp">
       <Filter>Maze</Filter>
     </ClCompile>
-    <ClCompile Include="List.cpp">
+    <ClCompile Include="Vector.cpp">
       <Filter>DataStructure</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="List.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Array.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Array.ipp">
       <Filter>DataStructure</Filter>
     </ClInclude>
   </ItemGroup>
