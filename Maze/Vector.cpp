@@ -1,5 +1,5 @@
-﻿#include "Vector.h"
-#include <iostream>
+﻿#include "pch.h"
+#include "Vector.h"
 #include <type_traits>
 
 template<typename T>
@@ -122,9 +122,25 @@ void Vector<T>::PrintAllElements()
 {
 	for (int i = 0; i < _size; ++i)
 	{
-		std::cout << _buffer[i] << ' ';
+		cout << _buffer[i] << ' ';
 	}
-	std::cout << '\n';
+	cout << '\n';
+}
+
+/// <summary>
+/// 템플릿 함수는 컴파일러가 보통 만드므로, 이거 중복 정의 에러내지 마세요
+/// 하려면 inline 해줘야 함
+/// </summary>
+
+template<>
+void Vector<Pos>::PrintAllElements()
+{
+	for (int i = 0; i < _size; ++i)
+	{
+		cout << _buffer[i].x << ' ' << _buffer[i].y << ' ';
+	}
+	cout << '\n';
 }
 
 template class Vector<int>;
+template class Vector<Pos>;

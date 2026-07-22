@@ -1,6 +1,5 @@
-﻿#include "List.h"
-#include <iostream>
-using std::cout;
+﻿#include "pch.h"
+#include "List.h"
 
 // *************************
 // 굳이 prevNode를 쓰는 것은, 노드 이동 후 전 삭제 -> 이동 후가 nullptr일 수 있음. 현재 노드 삭제 후 이동 -> 삭제했는데 next 참조를 어떻게 함

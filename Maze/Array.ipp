@@ -1,5 +1,5 @@
-﻿#include "Array.h"
-#include <iostream>
+﻿#include "pch.h"
+#include "Array.h"
 
 template <typename T, int N>
 Array<T, N>::Array()
