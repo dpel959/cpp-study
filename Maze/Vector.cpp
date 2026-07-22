@@ -59,6 +59,13 @@ void Vector<T>::pop_back()
 }
 
 template<typename T>
+void Vector<T>::resize(int size)
+{
+	reserve(size);
+	_size = size;
+}
+
+template<typename T>
 void Vector<T>::reserve(int capacity)
 {
 	if (_capacity >= capacity)

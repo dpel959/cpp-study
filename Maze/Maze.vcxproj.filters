@@ -37,6 +37,12 @@
     <ClCompile Include="RandomUtils.cpp">
       <Filter>Maze</Filter>
     </ClCompile>
+    <ClCompile Include="Stack.cpp">
+      <Filter>DataStructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Queue.cpp">
+      <Filter>DataStructure</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="List.h">
@@ -68,6 +74,12 @@
     </ClInclude>
     <ClInclude Include="RandomUtils.h">
       <Filter>Maze</Filter>
+    </ClInclude>
+    <ClInclude Include="Stack.h">
+      <Filter>DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Queue.h">
+      <Filter>DataStructure</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

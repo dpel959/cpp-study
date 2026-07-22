@@ -21,6 +21,8 @@ public:
 
 	void pop_back();
 
+	void resize(int size);
+
 	void reserve(int capacity);
 	
 	void clear();

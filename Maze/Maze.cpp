@@ -2,7 +2,7 @@
 #include "Vector.h"
 #include "Board.h"
 #include "Player.h"
-
+#include "Stack.h"
 /// <summary>
 /// 주소값을 넣는데 값 타입 객체를 넣는 건 위험하다.
 /// 스코프에서 벗어나면 사라지기 때문에. 여기서는 아니다만 습관적으로 위험.
@@ -13,6 +13,15 @@
 
 int main()
 {
+	Stack<int> st;
+	st.push(1);
+	st.push(2);
+	st.push(3);
+
+	int a = st.top();
+	st.pop();
+
+
 	Board* board = new Board();
 	Player* player = new Player();
 
