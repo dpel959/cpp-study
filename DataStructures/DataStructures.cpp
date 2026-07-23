@@ -1,7 +1,7 @@
 ﻿#include <iostream>
 #include <vector>
 #include <utility>
-using std::vector, std::cout, std::swap;
+using std::vector, std::cout, std::swap, std::less, std::greater;
 
 ///
 /// Tree
@@ -103,7 +103,7 @@ using std::vector, std::cout, std::swap;
 /// PriorityQueue
 /// 
 
-template <typename T>
+template <typename T, typename Predicate = less<T>>
 class PriorityQueue
 {
 public:
@@ -114,30 +114,38 @@ public:
 
         // 도장깨기 시작
         int curIdx = static_cast<int>(_heap.size()) - 1;
-        int parentIdx = (curIdx - 1) / 2;
 
-        while (_heap[curIdx] > _heap[parentIdx])
+        // 처음엔 curIdx에서 값 < parentIdx에서 값로 만들었는데
+        // 같은 코드를 반복해 쓰게 되어서, 좋지 않게 되어 수정
+        while (curIdx > 0) 
         {
-            swap(_heap[curIdx], _heap[parentIdx]);
+            int parentIdx = (curIdx - 1) / 2;
 
-            curIdx = parentIdx;
-
-            if (curIdx == 0)
+            if (_predicate(_heap[parentIdx], _heap[curIdx]))
+            {
+                swap(_heap[curIdx], _heap[parentIdx]);
+            }
+            else
             {
                 break;
             }
-                   
-            parentIdx = (curIdx - 1) / 2;
+
+            curIdx = parentIdx;
         }
     }
 
     void pop()
     {
+        if (empty())
+        {
+            return;
+        }
+
         _heap[0] = _heap.back();
         _heap.pop_back();
         int curIdx = 0;
         int leftIdx = curIdx * 2 + 1;
-        int rightIdx = curIdx * 2 + 2;
+        int rightIdx;
 
         int heapSize = _heap.size();
 
@@ -145,12 +153,14 @@ public:
         {
             int nextIdx = curIdx;
             
-            if (_heap[curIdx] < _heap[leftIdx])
+            if (_predicate(_heap[nextIdx], _heap[leftIdx]))
             {
                 nextIdx = leftIdx;
             }
 
-            if (_heap[rightIdx] < heapSize && _heap[leftIdx] < _heap[rightIdx])
+            rightIdx = curIdx * 2 + 2;
+
+            if (rightIdx < heapSize && _predicate(_heap[nextIdx], _heap[rightIdx]))
             {
                 nextIdx = rightIdx;
             }
@@ -163,29 +173,28 @@ public:
             swap(_heap[curIdx], _heap[nextIdx]);
 
             curIdx = nextIdx;
-            int leftIdx = curIdx * 2 + 1;
-            int rightIdx = curIdx * 2 + 2;
+            leftIdx = curIdx * 2 + 1;
         }
     }
 
-    T& top()
+    const T& top() const
     {
         return _heap[0];
     }
 
-    bool empty()
+    bool empty() const // 값 반환이라 반환 타입에 const 안 붙임
     {
         return _heap.empty();
     }
 
 private:
     vector<T> _heap;
-
+    Predicate _predicate;
 };
 
 int main()
 {
-    PriorityQueue<int> pq;
+    PriorityQueue<int, greater<int>> pq;
     
     pq.push(10);
     pq.push(40);
