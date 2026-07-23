@@ -2,7 +2,9 @@
 #include "Types.h"
 #include <Windows.h>
 #include <iostream>
-using std::cout;
+#include <vector>
+#include <queue>
+using std::cout, std::vector, std::queue;
 
 struct Pos
 {

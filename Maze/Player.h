@@ -13,20 +13,21 @@ public:
 	void Init(Board* board);
 	void Update(uint64 deltaTick);
 
-	void SetPos(Pos pos);
-	Pos GetPos();
+	void SetPos(Pos pos) { _pos = pos; }
+	Pos GetPos() const { return _pos; }
 
-	bool CanGo(Pos pos);
+	bool CanGo(Pos pos) const;
 
 private:
-	void CalculatePath();
+	void CalculatePath_RightHand();
+	void CalculatePath_BFS();
 
 private:
 	Pos _pos;
 	int32 _dir = Dir::UP;
 	Board* _board = nullptr;
 
-	Vector<Pos> _path;
+	vector<Pos> _path;
 	int32 _pathIndex;
 	uint64 _sumTick = 0;
 };

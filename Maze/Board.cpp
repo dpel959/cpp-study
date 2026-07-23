@@ -4,25 +4,24 @@
 #include "ConsoleHelper.h"
 #include "RandomUtils.h"
 
+
 const char* TILE_CHAR = "■";
-
-Board::Board()
-{
-}
-
-Board::~Board()
-{
-}
 
 // 강의와 차별점 : 왜 굳이 의존성이 없는데 Init 함수를 써야하지?를 모르겠어서, 
 // 그렇다면 size가 3보다 낮으면 return 해버리는 코드를 만들었음.
 // 이러면 생성자로 하면 위험하므로, (다시 안전히 구축될 수 없음) Init 함수로 하는 이유가 생김.
+// 및, enterPos와 exitPos의 입력 자유를 주었고, 그것을 위해 Optional을 사용. (매개변수 디폴트 값에 매개변수를 사용할 수 없기에)
 
-void Board::Init(int32 size, Player* player)
+void Board::Init(int32 size, Player* player, Pos enterPos, std::optional<Pos> exitPos)
 {
 	if (size < 3)
 	{
 		cout << "Board는 3 이상의 사이즈여야합니다.\n";
+		return;
+	}
+	else if (player == nullptr)
+	{
+		cout << "Player가 nullptr 입니다.\n";
 		return;
 	}
 
@@ -30,7 +29,9 @@ void Board::Init(int32 size, Player* player)
 
 	_player = player;
 
-	_exitPos = Pos(size - 2, size - 2);
+	_enterPos = enterPos;
+
+	_exitPos = exitPos.value_or(Pos(size - 2, size - 2));
 
 	GenerateMap();
 }
@@ -159,14 +160,4 @@ ConsoleColor Board::GetTileColor(Pos pos)
 	}
 
 	return ConsoleColor::WHITE;
-}
-
-Pos Board::GetEnterPos()
-{
-	return Pos(1, 1);
-}
-
-Pos Board::GetExitPos()
-{
-	return _exitPos;
 }
