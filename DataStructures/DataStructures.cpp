@@ -1,8 +1,10 @@
 ﻿#include <iostream>
 #include <vector>
 #include <stack>
+#include <queue>
 #include <utility>
-using std::vector, std::cout, std::swap, std::less, std::greater, std::stack;
+
+using std::vector, std::cout, std::swap, std::less, std::greater, std::stack, std::queue;
 
 /// ********************************
 /// Tree
@@ -492,11 +494,11 @@ void DfsAll()
 /// 재귀는 이어진 정점들의 앞부터 들르는데, 스택은 뒤부터 들름.
 /// 
 
-void StackDfs(int start)
+void StackDfs(int here)
 {
 	stack<int> dfsStack;
-	dfsStack.push(start);
-	visited[start] = true;
+	dfsStack.push(here);
+	visited[here] = true;
 
 	// 인접 리스트 버전
 
@@ -527,7 +529,7 @@ void StackDfs(int start)
 
 	while (dfsStack.empty() == false)
 	{
-		int here = dfsStack.top();
+		here = dfsStack.top();
 
 		cout << "Visited : " << here << '\n';
 
@@ -547,19 +549,132 @@ void StackDfs(int start)
 	}
 }
 
+///
+/// BFS (Breadth First Search) 너비 우선 서치
+/// 먼저 발견한 놈에게 먼저 접근한다. = Queue를 사용한다.
+/// visited를 사용하지 않는다. discovered를 사용한다.
+/// 
+/// BFS는 여러가지를 좀 기록해주자! 얘는 누가 발견했는지, (최단 거리 경로 추적)
+/// start로부터 얼만큼 떨어져 있는지 정보 수집이 좀 중요해서. (최단 거리)
+/// 
+
+vector<bool> discovered;
+
+void BFS(int here)
+{
+	vector<int> parent(6, -1); // -1이면 아무도 발견 못한 것. (고립)
+
+	vector<int> dist(6, -1); // -1이면 아무도 발견 못한 것. (고립)
+
+	queue<int> q;
+	q.push(here);
+	discovered[here] = true; // stack 형식 DFS와 유사하죠? 예약과 visited/discovered는 같이 움직임.
+
+	parent[here] = here; // 시작점은 자기가 자신을 발견한 것으로 처리
+	dist[here] = 0; // 시작점과의 거리는 0. (자기 자신)
+
+	//// 인접 리스트 방식
+
+	//while (q.empty() == false)
+	//{
+	//	here = q.front();
+
+	//	cout << "Visited : " << here << '\n';
+
+	//	q.pop();
+
+	//	int size = adjacent[here].size();
+
+	//	for (int i = 0; i < size; ++i)
+	//	{
+	//		int there = adjacent[here][i];
+	//		if (discovered[there] == false)
+	//		{
+	//			q.push(there);
+	//			discovered[there] = true;
+	//		}
+	//	}
+	//}
+
+	// 인접 행렬 방식
+
+	int size = adjacent.size();
+
+	// 같은 깊이 애들을 동시에 돌려줄 필요가 없는게, 어차피 큐에서 FIFO로 알아서 먼저 나올거라서.
+
+	while (q.empty() == false)
+	{
+		here = q.front();
+		
+		cout << "Visited : " << here << '\n';
+
+		q.pop();
+
+		for (int i = 0; i < size; ++i)
+		{		
+			if(adjacent[here][i] == 1 && discovered[i] == false)
+			{
+				q.push(i);
+				discovered[i] = true;
+
+				parent[i] = here;
+				dist[i] = dist[here] + 1;
+			}
+		}
+	}
+}
+
+void BfsAll()
+{
+	int size = adjacent.size();
+
+	for (int i = 0; i < size; ++i)
+	{
+		if (discovered[i] == false)
+		{
+			BFS(i);
+		}
+	}
+}
+
+
+/// 
+/// BFS의 시간 복잡도는... DFS와 같다.
+/// 인접 리스트 시의 조회 -> V마다 E개의 만큼 반복문을 도는 것은 변하지 않는다. 방문은 안 하더라도.
+/// 
+/// 인접 행렬 시의 조회 -> 이것도 V마다 V개의 for문을 도는 것도 변하지 않는다.
+/// 
+/// 그냥 이유가 단순하다. 어차피 그만큼 도는 건 똑같다. 그런데 queue면 FIFO로 탐색하고 stack은 LIFO로 탐색할 뿐이다.
+/// 그게 끝이다.
+/// 
+
 int main()
 {
 	CreateGraph();
 
+	cout << "DFS-----\n";
 	visited = vector<bool>(6, false);
+	//StackDfs(0);
 	//DFS(0);
-	//DfsAll();
-	StackDfs(0);
+	DfsAll();
+
+	cout << "BFS-----\n";
+	discovered = vector<bool>(6, false);
+	//BFS(0);
+	BfsAll();
 }
 
 ///
-/// 그럼 여기서 3번은 0번에 의해 들러지는 걸까? 1번에 의해 들러지는 걸까? 하면 1번이다.
+/// DFS : 그럼 여기서 3번은 0번에 의해 들러지는 걸까? 1번에 의해 들러지는 걸까? 하면 1번이다.
 /// 0->1->2->1->3->4->3->1->0 으로 가고, 0이 3으로 가려했더니 visited가 찍혀있어서 못 간다.
 /// 보통 재귀문을 저렇게 for문으로 돌면 자식의 for문이 전부 실행되고 return 된다.
 /// 물론 구조에 따라 다르겠다만. 재귀 자체를 for문으로 돌면 그렇다.
+/// 
+/// BFS : 0 pop -> (1, 3) -> 1 pop -> (3, 2) -> 3 pop -> (2, 4) -> 2 pop -> (4) -> 4 pop
+/// 그냥 먼저 넣어진 놈이 자기와 가장 가까운 애들을 다 넣고 가는 거다.
+/// 
+/// 큐에 넣어지는 건 무조건. 무조건 거리 순서이다. 나중에 최단 거리가 되는 애가 나오는 경우 같은 게 있을 수가 없다.
+/// [1칸, 1칸 .. 2칸, 2칸 ..., 3칸, 3칸...]
+/// 그냥 FIFO라서 무조건이다. 1칸 떨어진 애들이 2칸 떨어진 애들을 넣고, 2칸 떨어진 애들이 3칸 떨어진 애들을 넣고.
+/// 무조건 가까운 애들부터 처리되므로.
 /// 
