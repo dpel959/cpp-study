@@ -4,7 +4,8 @@
 #include <queue>
 #include <utility>
 
-using std::vector, std::cout, std::swap, std::less, std::greater, std::stack, std::queue;
+using std::vector, std::cout, std::swap, std::less, std::greater
+, std::stack, std::queue, std::priority_queue;
 
 /// ********************************
 /// Tree
@@ -393,15 +394,24 @@ void CreateGraph()
 	//adjacent[5] = { 4 };
 
 	// 인접 행렬
-	adjacent = vector<vector<int>>
-	{
-		{0,1,0,1,0,0},
-		{1,0,1,1,0,0},
-		{0,0,0,0,0,0},
-		{0,0,0,0,1,0},
-		{0,0,0,0,0,0},
-		{0,0,0,0,1,0}
-	};
+	//adjacent = vector<vector<int>>
+	//{
+	//	{0,1,0,1,0,0},
+	//	{1,0,1,1,0,0},
+	//	{0,0,0,0,0,0},
+	//	{0,0,0,0,1,0},
+	//	{0,0,0,0,0,0},
+	//	{0,0,0,0,1,0}
+	//};
+
+	// 다익스트라 인접 행렬 (가중치)
+	adjacent = vector<vector<int>>(6, vector<int>(6, -1));
+	adjacent[0][1] = adjacent[1][0] = 15;
+	adjacent[0][3] = adjacent[3][0] = 35;
+	adjacent[1][2] = adjacent[2][1] = 5;
+	adjacent[1][3] = adjacent[3][1] = 10;
+	adjacent[3][4] = adjacent[4][3] = 5;
+	adjacent[5][4] = adjacent[4][5] = 5;
 }
 
 /// 
@@ -648,6 +658,121 @@ void BfsAll()
 /// 그게 끝이다.
 /// 
 
+
+///
+/// 다익스트라 = BFS + 코스트 / 큐 대신 우선순위 큐
+/// 
+
+/// <summary>
+/// 이 상태로는 안 돌아간다. 왜냐하면 priority queue는 대소비교 operator을 무조건 필요로 하기 때문이다.
+/// 그리고 뒤에 const 붙여야한다. 왜냐면 priority queue가 뒤에 const 붙은 operator 함수만 받아서...
+/// 
+/// cost는 알겠는데, vertex는 뭐에요?
+/// 원래 정점 넘버를 표기해주는게 필요하다. 근데 우리는 인접 리스트, 인접 행렬에 어차피 관계도 다 표기 되어있고
+/// 그냥 0부터 순서대로 써서 어차피 for문 돌건데 깡으로 int 값을 넣어줬었음 < 사실 이게 그냥 vertex 번호였음.
+/// 근데 갑자기 이걸 왜 쓰냐면... cost와 vertex 값을 동시에 넣어야하기 때문임.
+/// 
+/// 사실 그래서 보통 객체를 만들지는 않고, std::pair 쓰는데 이번에는 struct로 해보는 걸로.
+/// 
+/// </summary>
+struct VertexCost
+{
+	VertexCost(int cost, int vertex) : cost(cost), vertex(vertex) {}
+
+	bool operator < (const VertexCost& other) const
+	{
+		return cost < other.cost;
+	}
+
+	bool operator > (const VertexCost& other) const
+	{
+		return cost > other.cost;
+	}
+
+	int cost;
+	int vertex;
+};
+
+void Dijikstra(int here)
+{
+	// std에 있다. 
+	priority_queue<VertexCost, vector<VertexCost>, greater<VertexCost>> pq;
+
+	// '각 정점마다 얼마나 가중치가 낮게 갈 수 있느냐?' 의 베스트 케이스를 저장하는 곳이다.
+	// 이 값을 기준으로 '오, 너는 갱신될 만 하네' '안 돼, 가중치 더 낮춰서 와'를 판별 가능함.
+	// 가중치를 저장하는데, 가장 낮은 값을 비교하며 넣어야하므로, 가장 큰 값인(방해가 안 되는) 가장 큰 값을 넣는다.
+
+	vector<int> best(6, std::numeric_limits<int32_t>::max()); 
+
+	vector<int> parent(6, -1);
+
+	pq.push(VertexCost(0, here)); // 0번 코스트로 here 점이 등장할 것이다.
+	best[here] = 0;// here은 어차피 자기 자신이니 이동 코스트 0
+	parent[here] = here;
+
+	while (pq.empty() == false)
+	{
+		// '인접한 놈' 이 아니고, '제일 좋은 후보'를 찾는다.
+		// 이게 어떻게 돼요? 라고 물을 수도 있는데. 지금 하는 건 '내가 인접하면서 가보는 것' 이 아니라,
+		// '각 루트마다 어떻
+		VertexCost v = pq.top();
+		pq.pop();
+
+		int cost = v.cost;
+		here = v.vertex;
+
+		// 밑에서 다른 놈이 best[there]을 갱신하고, 내 차례다 하고 here이 이번 반복문에 왔는데
+		// 그 갱신된 best[there]이 가중치가 지금 나보다 낮아서 내가 최솟값이 될 수가 없음.
+		// 그러면 그냥 '어, ㅋㅋ;; 내가 최솟값일 수가 없네 갈게요' 하고 그냥 가는 것.
+
+		// 이게 왜 있냐면, 이걸 하다보면 (25, 3) (35, 3) 같은게 쌓일 수가 있어서 그럼.
+		// 그래서 나중에 35, 3이 처리할 차례가 왔을 때 그냥 여기서 폐기하는 거임.
+
+		if (best[here] < cost)
+			continue;
+
+		// 여기를 건넜다면 내가 최솟값임.
+
+		cout << "Visited!" << here << '\n';
+
+		for (int there = 0; there < 6; ++there)
+		{
+			// 연결 안 됐으면 스킵
+			if (adjacent[here][there] == -1)
+				continue;
+
+			// 더 좋은 경로를 과거에 찾았으면 스킵 (왜 여기서 한 번 더? 수학 전으로 이 전에는 불가능하다며)
+			int nextCost = best[here] + adjacent[here][there];
+
+			// 지금 구한 건 최선이 아니다. 라는 뜻인데. 이게 종료 조건 역할(visited, discovered)도 함.
+			// 만약 내가 1 -> 2 로 가서 값이 늘었는데, 2 -> 1 로 다시 되돌아가려 하면, 기존 값보다 무조건 합산된 가중치가 높을 거임.
+			// 즉, 절대 되돌아갈 일은 없다는 것.
+			// 종료 조건이 BFS나 DFS와는 다름. 다른 노드에 들러졌다고 안 들르는 건 아님.
+			// 단, 그 녀석이 '최솟값이 될 가능성이 사라졌을 때, 그 루트의 전진은 중지됨' 이 올바름.
+			// 어떤 한 best에서 막혔다면, 그 녀석은 다른 곳에서도 best가 절대 될 수 없다.
+
+			// 왜 그렇냐 하면, 다익스트라는 '모든 경로가 같은 한 점에서 시작하고 + 그 한 점에서부터 가중치를 세기 때문'이다.
+			// 거기에 같은 길을 되돌아가거나 할 수도 없다. 내가 best보다 밀린다면 앞으로 어디를 가든 밀린다.
+			// 내가 시작한 점 쪽으로 돌아서 간다면 애초에 그 점에 더 가까이 출발한 상대한테 밀릴 것이고, (애초에 내가 여기까지 오는데 졌으니까) 
+			// 그대로 직진한다 해도 best인 놈한테 밀린다. 어디서도 이길 수 없다.
+
+			if (nextCost >= best[there]) 
+			{
+				continue;
+			}
+
+			// 여기까지 왔다면 지금까지의 반복에서 찾은 경로중에서 최선의 수치. 
+
+			best[there] = nextCost;
+			parent[there] = here; 
+			pq.push(VertexCost(nextCost, there));
+
+			// 그리고 살아남았다면 이 녀석이 최소치의 희망이 있는 녀석이므로, 이 녀석을 push 하는 것.
+		}
+	}
+}
+
+
 int main()
 {
 	CreateGraph();
@@ -662,6 +787,9 @@ int main()
 	discovered = vector<bool>(6, false);
 	//BFS(0);
 	BfsAll();
+
+	cout << "Dijikstra-----\n";
+	Dijikstra(0);
 }
 
 ///
