@@ -7,236 +7,246 @@
 using std::vector, std::cout, std::swap, std::less, std::greater
 , std::stack, std::queue, std::priority_queue;
 
+#pragma region Tree
+#if 0
 /// ********************************
 /// Tree
 /// ********************************
 
-//class Node
-//{
-//public:
-//    Node(const char* data) : data(data) {}
-//public:
-//    const char* data;
-//    vector<Node*> children;
-//};
-//
-//Node* CreateTree()
-//{
-//    Node* root = new Node("R1 개발실");
-//    {
-//        Node* node = new Node("디자인");
-//        root->children.push_back(node);
-//        {
-//            Node* leaf = new Node("전투");
-//            node->children.push_back(leaf);
-//        }
-//        {
-//            Node* leaf = new Node("경제");
-//            node->children.push_back(leaf);
-//        }
-//        {
-//            Node* leaf = new Node("스토리");
-//            node->children.push_back(leaf);
-//        }
-//    }
-//    {
-//        Node* node = new Node("프로그래밍");
-//        root->children.push_back(node);
-//        {
-//            Node* leaf = new Node("클라");
-//            node->children.push_back(leaf);
-//        }
-//        {
-//            Node* leaf = new Node("서버");
-//            node->children.push_back(leaf);
-//        }
-//        {
-//            Node* leaf = new Node("엔진");
-//            node->children.push_back(leaf);
-//        }
-//    }
-//    {
-//        Node* node = new Node("아트");
-//        root->children.push_back(node);
-//        {
-//            Node* leaf = new Node("배경");
-//            node->children.push_back(leaf);
-//        }
-//        {
-//            Node* leaf = new Node("캐릭터");
-//            node->children.push_back(leaf);
-//        }
-//    }
-//
-//    return root;
-//}
-//
-//void PrintTree(Node* root, int depth = 0)
-//{
-//    for (int i = 0; i < depth; ++i)
-//    {
-//        cout << '-';
-//    }
-//
-//    cout << root->data << '\n';
-//
-//    int size = root->children.size();
-//
-//    for (int i = 0; i < size; ++i)
-//    {
-//        PrintTree(root->children[i], depth + 1);
-//    }
-//}
-//
-//int GetHeight(Node* root)
-//{
-//    int ret = 1;
-//
-//    int size = root->children.size();
-//
-//    for (int i = 0; i < size; ++i)
-//    {
-//        int h = GetHeight(root->children[i]) + 1;
-//        ret = std::max(ret, h);
-//    }
-//
-//    return ret;
-//}
+class Node
+{
+public:
+    Node(const char* data) : data(data) {}
+public:
+    const char* data;
+    vector<Node*> children;
+};
 
+Node* CreateTree()
+{
+    Node* root = new Node("R1 개발실");
+    {
+        Node* node = new Node("디자인");
+        root->children.push_back(node);
+        {
+            Node* leaf = new Node("전투");
+            node->children.push_back(leaf);
+        }
+        {
+            Node* leaf = new Node("경제");
+            node->children.push_back(leaf);
+        }
+        {
+            Node* leaf = new Node("스토리");
+            node->children.push_back(leaf);
+        }
+    }
+    {
+        Node* node = new Node("프로그래밍");
+        root->children.push_back(node);
+        {
+            Node* leaf = new Node("클라");
+            node->children.push_back(leaf);
+        }
+        {
+            Node* leaf = new Node("서버");
+            node->children.push_back(leaf);
+        }
+        {
+            Node* leaf = new Node("엔진");
+            node->children.push_back(leaf);
+        }
+    }
+    {
+        Node* node = new Node("아트");
+        root->children.push_back(node);
+        {
+            Node* leaf = new Node("배경");
+            node->children.push_back(leaf);
+        }
+        {
+            Node* leaf = new Node("캐릭터");
+            node->children.push_back(leaf);
+        }
+    }
+
+    return root;
+}
+
+void PrintTree(Node* root, int depth = 0)
+{
+    for (int i = 0; i < depth; ++i)
+    {
+        cout << '-';
+    }
+
+    cout << root->data << '\n';
+
+    int size = root->children.size();
+
+    for (int i = 0; i < size; ++i)
+    {
+        PrintTree(root->children[i], depth + 1);
+    }
+}
+
+int GetHeight(Node* root)
+{
+    int ret = 1;
+
+    int size = root->children.size();
+
+    for (int i = 0; i < size; ++i)
+    {
+        int h = GetHeight(root->children[i]) + 1;
+        ret = std::max(ret, h);
+    }
+
+    return ret;
+}
+#endif
+#pragma endregion
+
+#pragma region PriorityQueue
+#if 0
 /// ********************************
 /// PriorityQueue
 /// ********************************
 
-//template <typename T, typename Predicate = less<T>>
-//class PriorityQueue
-//{
-//public:
-//    void push(const T& data)
-//    {
-//        // 일단 힙 구조 맞추기
-//        _heap.push_back(data);
-//
-//        // 도장깨기 시작
-//        int curIdx = static_cast<int>(_heap.size()) - 1;
-//
-//        // 처음엔 curIdx에서 값 < parentIdx에서 값로 만들었는데
-//        // 같은 코드를 반복해 쓰게 되어서, 좋지 않게 되어 수정
-//        while (curIdx > 0) 
-//        {
-//            int parentIdx = (curIdx - 1) / 2;
-//
-//            if (_predicate(_heap[parentIdx], _heap[curIdx]))
-//            {
-//                swap(_heap[curIdx], _heap[parentIdx]);
-//            }
-//            else
-//            {
-//                break;
-//            }
-//
-//            curIdx = parentIdx;
-//        }
-//    }
-//
-//    void pop()
-//    {
-//        if (empty())
-//        {
-//            return;
-//        }
-//
-//        _heap[0] = _heap.back();
-//        _heap.pop_back();
-//        int curIdx = 0;
-//        int leftIdx = curIdx * 2 + 1;
-//        int rightIdx;
-//
-//        int heapSize = _heap.size();
-//
-//        while (leftIdx < heapSize)
-//        {
-//            int nextIdx = curIdx;
-//            
-//            if (_predicate(_heap[nextIdx], _heap[leftIdx]))
-//            {
-//                nextIdx = leftIdx;
-//            }
-//
-//            rightIdx = curIdx * 2 + 2;
-//
-//            if (rightIdx < heapSize && _predicate(_heap[nextIdx], _heap[rightIdx]))
-//            {
-//                nextIdx = rightIdx;
-//            }
-//
-//            if (nextIdx == curIdx)
-//            {
-//                break;
-//            }
-//
-//            swap(_heap[curIdx], _heap[nextIdx]);
-//
-//            curIdx = nextIdx;
-//            leftIdx = curIdx * 2 + 1;
-//        }
-//    }
-//
-//    const T& top() const
-//    {
-//        return _heap[0];
-//    }
-//
-//    bool empty() const // 값 반환이라 반환 타입에 const 안 붙임
-//    {
-//        return _heap.empty();
-//    }
-//
-//private:
-//    vector<T> _heap;
-//    Predicate _predicate;
-//};
+template <typename T, typename Predicate = less<T>>
+class PriorityQueue
+{
+public:
+    void push(const T& data)
+    {
+        // 일단 힙 구조 맞추기
+        _heap.push_back(data);
 
+        // 도장깨기 시작
+        int curIdx = static_cast<int>(_heap.size()) - 1;
 
+        // 처음엔 curIdx에서 값 < parentIdx에서 값로 만들었는데
+        // 같은 코드를 반복해 쓰게 되어서, 좋지 않게 되어 수정
+        while (curIdx > 0) 
+        {
+            int parentIdx = (curIdx - 1) / 2;
+
+            if (_predicate(_heap[parentIdx], _heap[curIdx]))
+            {
+                swap(_heap[curIdx], _heap[parentIdx]);
+            }
+            else
+            {
+                break;
+            }
+
+            curIdx = parentIdx;
+        }
+    }
+
+    void pop()
+    {
+        if (empty())
+        {
+            return;
+        }
+
+        _heap[0] = _heap.back();
+        _heap.pop_back();
+        int curIdx = 0;
+        int leftIdx = curIdx * 2 + 1;
+        int rightIdx;
+
+        int heapSize = _heap.size();
+
+        while (leftIdx < heapSize)
+        {
+            int nextIdx = curIdx;
+            
+            if (_predicate(_heap[nextIdx], _heap[leftIdx]))
+            {
+                nextIdx = leftIdx;
+            }
+
+            rightIdx = curIdx * 2 + 2;
+
+            if (rightIdx < heapSize && _predicate(_heap[nextIdx], _heap[rightIdx]))
+            {
+                nextIdx = rightIdx;
+            }
+
+            if (nextIdx == curIdx)
+            {
+                break;
+            }
+
+            swap(_heap[curIdx], _heap[nextIdx]);
+
+            curIdx = nextIdx;
+            leftIdx = curIdx * 2 + 1;
+        }
+    }
+
+    const T& top() const
+    {
+        return _heap[0];
+    }
+
+    bool empty() const // 값 반환이라 반환 타입에 const 안 붙임
+    {
+        return _heap.empty();
+    }
+
+private:
+    vector<T> _heap;
+    Predicate _predicate;
+};
+#endif
+#pragma endregion
+
+#pragma region Graph
 /// ********************************
 /// Graph
 /// ********************************
 
-//void CreateGraph_1()
-//{
-//	struct Vertex
-//	{
-//		// int data;
-//		vector<Vertex*> edges;
-//	};
-//
-//	vector<Vertex> v(6);
-//
-//	v[0].edges.push_back(&v[1]);
-//	v[0].edges.push_back(&v[3]);
-//
-//	v[1].edges.push_back(&v[0]);
-//	v[1].edges.push_back(&v[2]);
-//	v[1].edges.push_back(&v[3]);
-//
-//	v[3].edges.push_back(&v[4]);
-//
-//	v[5].edges.push_back(&v[4]);
-//
-//	// 0번이 3번과 이어져 있나요?
-//
-//	bool connected = false;
-//
-//	int size = v[0].edges.size();
-//
-//	for (int i = 0; i < size; ++i)
-//	{
-//		if (v[0].edges[i] == &v[3])
-//		{
-//			connected = true;
-//			break;
-//		}
-//	}
-//}
+#if 0
+void CreateGraph_1()
+{
+	struct Vertex
+	{
+		// int data;
+		vector<Vertex*> edges;
+	};
+
+	vector<Vertex> v(6);
+
+	v[0].edges.push_back(&v[1]);
+	v[0].edges.push_back(&v[3]);
+
+	v[1].edges.push_back(&v[0]);
+	v[1].edges.push_back(&v[2]);
+	v[1].edges.push_back(&v[3]);
+
+	v[3].edges.push_back(&v[4]);
+
+	v[5].edges.push_back(&v[4]);
+
+	// 0번이 3번과 이어져 있나요?
+
+	bool connected = false;
+
+	int size = v[0].edges.size();
+
+	for (int i = 0; i < size; ++i)
+	{
+		if (v[0].edges[i] == &v[3])
+		{
+			connected = true;
+			break;
+		}
+	}
+}
+#endif
 
 /// 
 /// 위 같이 짜는 게 가장 직관적이겠지만, 저렇게 짜지는 않음.
@@ -250,37 +260,39 @@ using std::vector, std::cout, std::swap, std::less, std::greater
 /// 자료구조 리스트 말하는 거 아니다. 인접한 것을 리스트로 저장해 관리한다는 뜻.
 ///
 
-//void CreateGraph_2()
-//{
-//	struct Vertex
-//	{
-//		int data;
-//	};
-//
-//	vector<Vertex> v(6);
-//
-//	vector<vector<int>> adjacent(6); // 각 정점마다 인접한 것의 목록을 저장
-//
-//	adjacent[0] = { 1,3 }; // 얘는 벡터다. 사실 그래서 위에서 { {1, 3}, { 0, 2, 3 } ... } 형태로 초기화해도 됐다
-//	adjacent[1] = { 0, 2, 3 };
-//	adjacent[3] = { 4 };
-//	adjacent[5] = { 4 };
-//
-//	//0번이 3번을 가리키고 있나요? 확인
-//
-//	bool connected = false;
-//
-//	int size = adjacent[0].size();
-//
-//	for (int i = 0; i < size; ++i)
-//	{
-//		if (adjacent[0][i] == 3)
-//		{
-//			connected = true;
-//			break;
-//		}
-//	}
-//}
+#if 0
+void CreateGraph_2()
+{
+	struct Vertex
+	{
+		int data;
+	};
+
+	vector<Vertex> v(6);
+
+	vector<vector<int>> adjacent(6); // 각 정점마다 인접한 것의 목록을 저장
+
+	adjacent[0] = { 1,3 }; // 얘는 벡터다. 사실 그래서 위에서 { {1, 3}, { 0, 2, 3 } ... } 형태로 초기화해도 됐다
+	adjacent[1] = { 0, 2, 3 };
+	adjacent[3] = { 4 };
+	adjacent[5] = { 4 };
+
+	//0번이 3번을 가리키고 있나요? 확인
+
+	bool connected = false;
+
+	int size = adjacent[0].size();
+
+	for (int i = 0; i < size; ++i)
+	{
+		if (adjacent[0][i] == 3)
+		{
+			connected = true;
+			break;
+		}
+	}
+}
+#endif
 
 /// 
 /// 그래프마다 장단점이 갈린다.
@@ -306,46 +318,48 @@ using std::vector, std::cout, std::swap, std::less, std::greater
 /// 조회가 O(1)임.
 /// 
 
-//void CreateGraph_3()
-//{
-//	struct Vertex
-//	{
-//		int data;
-//	};
-//
-//	vector<Vertex> v(6);
-//
-//	vector<vector<bool>> adjacent(6, vector<bool>(6, false));
-//	// bool은 false로 자동 초기화해줘서 이렇게 할 필요는 없다만. 안전상.
-//
-//	// 대입은 좀 불편하다.
-//
-//	adjacent[0][1] = true;
-//	adjacent[0][3] = true;
-//	adjacent[1][0] = true;
-//	adjacent[1][2] = true;
-//	adjacent[1][3] = true;
-//	adjacent[3][4] = true;
-//	adjacent[5][4] = true;
-//
-//	// 0이 3을 가리키고있나요? 바로 대답 가능.
-//
-//	bool connected = adjacent[0][3];
-//
-//	// 만약 여기서 가중치를 넣어주고 싶다면?
-//	// 그냥 bool 대신 int를 넣으면 된다. -1이면 안 이어져 있는 거고, 그 외는 이어져 있는 것. 보통은 이어져있지 않은 것을 아주 큰 값을 넣는다. 나중에 다익스트라 등 최단 길찾기를 할때 가중치가 적은데 허수 값이면 방해가 된다.
-//	// 참고로 자기 자신은 그냥 끊긴 걸로 한다. 괜히 이어져 있는 것을 찾을 때 방해가 될 수 있다.
-//
-//	vector<vector<int>> adjacent2 =
-//	{
-//		{ -1, 15, -1, 35, -1, -1},
-//		{15, -1, 5, 10, -1, -1},
-//		{-1,5,-1,-1,-1,-1},
-//		{35, 10, -1, -1, 5, -1},
-//		{-1,-1,-1,5,-1,5},
-//		{-1,-1,-1,-1,5,-1}
-//	};
-//}
+#if 0
+void CreateGraph_3()
+{
+	struct Vertex
+	{
+		int data;
+	};
+
+	vector<Vertex> v(6);
+
+	vector<vector<bool>> adjacent(6, vector<bool>(6, false));
+	// bool은 false로 자동 초기화해줘서 이렇게 할 필요는 없다만. 안전상.
+
+	// 대입은 좀 불편하다.
+
+	adjacent[0][1] = true;
+	adjacent[0][3] = true;
+	adjacent[1][0] = true;
+	adjacent[1][2] = true;
+	adjacent[1][3] = true;
+	adjacent[3][4] = true;
+	adjacent[5][4] = true;
+
+	// 0이 3을 가리키고있나요? 바로 대답 가능.
+
+	bool connected = adjacent[0][3];
+
+	// 만약 여기서 가중치를 넣어주고 싶다면?
+	// 그냥 bool 대신 int를 넣으면 된다. -1이면 안 이어져 있는 거고, 그 외는 이어져 있는 것. 보통은 이어져있지 않은 것을 아주 큰 값을 넣는다. 나중에 다익스트라 등 최단 길찾기를 할때 가중치가 적은데 허수 값이면 방해가 된다.
+	// 참고로 자기 자신은 그냥 끊긴 걸로 한다. 괜히 이어져 있는 것을 찾을 때 방해가 될 수 있다.
+
+	vector<vector<int>> adjacent2 =
+	{
+		{ -1, 15, -1, 35, -1, -1},
+		{15, -1, 5, 10, -1, -1},
+		{-1,5,-1,-1,-1,-1},
+		{35, 10, -1, -1, 5, -1},
+		{-1,-1,-1,5,-1,5},
+		{-1,-1,-1,-1,5,-1}
+	};
+}
+#endif
 
 ///
 /// 아무튼, 그래프의 핵심은 데이터와 인접 여부를 따로 저장한다는 것이다.
@@ -360,6 +374,9 @@ using std::vector, std::cout, std::swap, std::less, std::greater
 /// 
 /// 그래서, 이 순회 방식으로 사용하는 것이 DFS, BFS.
 /// 
+#pragma endregion
+
+#pragma region GraphSearch
 
 /// 
 /// DFS (depth first search)
@@ -806,3 +823,4 @@ int main()
 /// 그냥 FIFO라서 무조건이다. 1칸 떨어진 애들이 2칸 떨어진 애들을 넣고, 2칸 떨어진 애들이 3칸 떨어진 애들을 넣고.
 /// 무조건 가까운 애들부터 처리되므로.
 /// 
+#pragma endregion
