@@ -1,6 +1,7 @@
 ﻿#include<iostream>
 #include<vector>
-using std::cout, std::vector;
+#include<list>
+using std::cout, std::vector, std::list;
 
 #pragma region FuncPointer
 #if 0
@@ -329,10 +330,11 @@ int main()
 #endif
 #pragma endregion
 
+#pragma region std::vector
 /// 
 /// vector erase 시 주의점을 본다.
 /// 
-
+#if 0
 int main()
 {
 	vector<int> v{ 1,2,3,4,5 };
@@ -388,3 +390,60 @@ int main()
 
 	// 사실 이런 실시간 스캔을 피해주는 게 좋다. 버그 확률이 높아져서... 괜히 remove-erase가 있는 게 아니다.
 }
+#endif
+
+#pragma endregion
+
+#pragma region BinarySearch
+
+void BinarySearch(const vector<int>& vec, int searchNum)
+{
+	int start = 0;
+	int mid;
+	int end = vec.size() - 1;
+
+	bool found = false;
+
+	while (start <= end) // start == end 일때도 허용해줘야한다. 값이 하나 남았을 때임.
+	{
+		// 뭔가 -1을 해줘야할 거 같지만, -1을 (start + end)에서든 최종값에서든 붙이면 안 된다.
+		// (start + end)에 -1을 하면, {0번, 1번, 2번} 일때 1/2가 되어 중간이 1인데 0을 가리킨다.
+		// 최종값에 -1을 붙이면, 크기가 하나일때, 그 위치를 0번이라 가정하면 -1번을 가리키게 된다.
+		// 그냥 순순히 써라. -1을 붙여서 괜히 중간 앞을 취해줄 이유가 크게 없다. 연산만 늘어난다.
+
+		// 그냥 잘 모르겠으면 '굉장히 적을때'를 생각해봐라.
+
+		mid = (start + end) / 2;
+
+		if (vec[mid] > searchNum)
+		{
+			end = mid - 1;
+		}
+		else if (vec[mid] < searchNum)
+		{
+			start = mid + 1;
+		}
+		else
+		{
+			found = true;
+			break;
+		}
+	}
+
+	if (found)
+	{
+		cout << "found " << searchNum << " at " << mid;
+	}
+	else
+	{
+		cout << "can't found " << searchNum;
+	}
+}
+
+int main()
+{
+	vector<int> numbers = {1,8,15,23,32,44,56,64,81,91};
+	BinarySearch(numbers, 44);
+}
+
+#pragma endregion
