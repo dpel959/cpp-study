@@ -1,6 +1,7 @@
 ﻿#include<iostream>
 #include<vector>
 #include<list>
+#include"BinarySearchTree.h"
 using std::cout, std::vector, std::list;
 
 #pragma region FuncPointer
@@ -395,12 +396,20 @@ int main()
 #pragma endregion
 
 #pragma region BinarySearch
-
+#if 0
 void BinarySearch(const vector<int>& vec, int searchNum)
 {
+	// 강의와 차별점 : 이거 굳이 왜 막아주냐 하면,
+	// size_t - int는 size_t(unsigned int)라서 end가 -1인데 언더플로우되어 매우 큰 숫자가 되어버린다. 크래시가 남
+
+	if (vec.empty())
+	{
+		return;
+	}
+
 	int start = 0;
 	int mid;
-	int end = vec.size() - 1;
+	int end = vec.size() - 1; 
 
 	bool found = false;
 
@@ -413,7 +422,10 @@ void BinarySearch(const vector<int>& vec, int searchNum)
 
 		// 그냥 잘 모르겠으면 '굉장히 적을때'를 생각해봐라.
 
-		mid = (start + end) / 2;
+		// 강의와 차별점 : 이렇게 하면 (start + end) / 2보다 오버플로우 위험이 줄어든다.
+		// 물론 연산이 한번 더 들어가긴 한다만. C++20 이후로는 std::midpoint를 써주는 게 낫다.
+
+		mid = start + (end - start) / 2;
 
 		if (vec[mid] > searchNum)
 		{
@@ -445,5 +457,24 @@ int main()
 	vector<int> numbers = {1,8,15,23,32,44,56,64,81,91};
 	BinarySearch(numbers, 44);
 }
+#endif
+#pragma endregion
 
+#pragma region BinarySearchTree
+int main()
+{
+	BinarySearchTree bst;
+	bst.Insert(20);
+	bst.Insert(30);
+	bst.Insert(10);
+
+	bst.Insert(25);
+	bst.Insert(26);
+	bst.Insert(40);
+	bst.Insert(50);
+
+	bst.Delete(26);
+
+	bst.Print();
+}
 #pragma endregion
