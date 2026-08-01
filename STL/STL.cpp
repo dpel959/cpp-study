@@ -540,8 +540,8 @@ int main()
 
 	m.insert_or_assign(v[3]->_id, v[3]); // emplace와 파라미터가 같지만 내부에서 만들어 주지는 않는다.
 
-	m.emplace(v[4]->_id, 400); // vector의 emplace_back과 같다. 재료만 주면 내부에서 pair을 만들고 넣는 거임.
-	// 이렇게 하면 400이 Player(400)이 되고, 그걸 또 pair로 만들어 넣어준다.
+	m.emplace(v[4]->_id, new Player(400)); // vector의 emplace_back과 같다. 재료만 주면 내부에서 pair을 만들고 넣는 거임.
+	// 만약 Player* 가 아니라, Player을 받았다면, 두 번째 파라미터에 400을 넣으면 Player(400)이 되고, 그걸 또 pair로 만들어 넣어준다.
 
 	// 만약 인자가 여러개라면, std::piecewise_construct를 인자로 넣어주거나 try_emplace를 사용하자.
 
@@ -598,13 +598,18 @@ int main()
 	// 물론, 하나의 데이터를 하나의 자료구조로만 다뤄야하는 것은 아니다.
 	// 같은 데이터를 하나는 map으로, 하나는 벡터로 다루어 찾기, 순회용으로 둬도 된다.
 	// 그만큼의 메모리는 지불해야겠지만.
+
+	for (Player* pp : v)
+	{
+		delete pp;
+	}
 }
 
 #endif
 #pragma endregion
 
 #pragma UnorderedMap(HashMap)
-
+#if 0
 int main()
 {
 	unordered_map<int, int> um;
@@ -645,5 +650,115 @@ int main()
 	// 근데 bucket이라는 게 있는데, 이건 뭐에요?
 	// hash 테이블의 인덱스 = key를 hash 함수를 취한 후 % 버킷 수 한 것.
 }
-
+#endif
 #pragma endregion
+
+#if 0
+// 실제 타입을 알 수 있는 방법 1. enum class를 만들어 수동 입력해주기
+// (실제로 많이 사용하는 방법임. dynamic_cast는 비싸니까.)
+enum class ObjectType
+{
+	Player,
+	Monster,
+	Projectile,
+	Env
+};
+
+class Object
+{
+public:
+	Object(ObjectType type) : _id(0), _type(type) {}
+	Object(int id, ObjectType type) : _id(id), _type(type) {}
+	virtual ~Object() {} // 상위 클래스면 필수!!
+
+	virtual void Init()
+	{
+
+	}
+
+	virtual void Update()
+	{
+
+	}
+
+public:
+	int _id;
+	ObjectType _type;
+};
+
+class Player : public Object
+{
+public:
+	Player() : Object(ObjectType::Player) {}
+	Player(int id) : Object(id, ObjectType::Player) {}
+};
+
+class Monster : public Object
+{
+public:
+	Monster() : Object(ObjectType::Monster) {}
+	Monster(int id) : Object(id, ObjectType::Monster) {}
+};
+
+class Manager
+{
+public:
+	static Manager& GetInstance()
+	{
+		static Manager instance;
+		return instance;
+	}
+
+	void Update() {
+		for (auto& item : _objects)
+		{
+			Object* obj = item.second;
+			obj->Update();
+		}
+	}
+
+	void AddObject(Object* object)
+	{
+		_objects.insert(std::make_pair(object->_id, object));
+	}
+
+	void RemoveObject(int id)
+	{
+		auto it = _objects.find(id);
+		if (it != _objects.end())
+		{
+			delete it->second;
+			_objects.erase(it);
+		}
+	}
+
+	Object* GetObject(int id)
+	{
+		auto it = _objects.find(id);
+		return (it != _objects.end()) ? it->second : nullptr; // []를 쓰지 않아 안전하게 return
+	}
+
+private:
+
+	unordered_map<int, Object*> _objects;
+};
+
+int main()
+{
+	Manager::GetInstance().AddObject(new Player(1));
+
+	Object* object = Manager::GetInstance().GetObject(1);
+
+	// 실제 타입 추론 방법 2. dynamic_cast로 알아보기.
+	// 단, 런타임 중 RTTI를 참고해서 좀 시간이 든다.
+
+	if (Player* player = dynamic_cast<Player*>(object))
+	{
+		cout << "Player 타입 추론 성공! ID: " << player->_id << "\n";
+	}
+	else
+	{
+		cout << "Player가 아닙니다.\n";
+	}
+}
+#endif
