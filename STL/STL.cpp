@@ -1,8 +1,10 @@
 ﻿#include<iostream>
 #include<vector>
 #include<list>
+#include<map>
+#include<unordered_map>
 #include"BinarySearchTree.h"
-using std::cout, std::vector, std::list;
+using std::cout, std::vector, std::list, std::map, std::unordered_map;
 
 #pragma region FuncPointer
 #if 0
@@ -461,6 +463,7 @@ int main()
 #pragma endregion
 
 #pragma region BinarySearchTree
+#if 0
 int main()
 {
 	BinarySearchTree bst;
@@ -477,4 +480,125 @@ int main()
 
 	bst.Print();
 }
+#endif
+#pragma endregion
+
+#pragma region Map
+
+
+class Player
+{
+public:
+	Player() : _id(0) {}
+	Player(int id) : _id(id) {}
+
+
+	int _id = 0;
+};
+
+/// 
+/// 만약 이런 상황에서 특정 ID에 해당하는 Player을 찾으라고 한다면?
+/// O(N)임. 이진 탐색도 정렬이 필요함. 
+/// 거기에, Player는 중간 삽입 삭제도 될 수 있음.
+/// 
+/// 아니 그럼 어쩌라고요, 그 구린 list라도 쓰자고요?
+/// -> Map을 쓴다.
+/// 
+
+/// 
+/// Map은 RBT 기반의 자료구조이다. 균형도 맞고, 이진 탐색 트리라 어느 대소 관계도 확실.
+/// 
+int main()
+{
+	vector<Player*> v;
+	v.push_back(new Player(100));
+	v.push_back(new Player(200));
+	v.push_back(new Player(300));
+	v.push_back(new Player(400));
+	v.push_back(new Player(500));
+
+	// (key, value) 값을 정해줘야 함, 당연히 value는 보관일 뿐 서칭에는 아무 도움도 되지 않음
+	// 애초에 그 서칭에 도움되는 역할을 하라고 있는 게 key임.
+
+	map<int, Player*> m;
+
+	// 추가
+	
+	std::pair<int, Player*> p(v[0]->_id, v[0]); // 별 거 없음. 그냥 2가지를 담는 컨테이너임. first, second를 접근 가능.
+	// 당연히 값은 둘 다 넣어줘야 함.
+	m.insert(p); 
+	m.insert(std::pair(v[1]->_id, v[1])); // 임시 객체로. std::make_pair와는 std::ref를 다루른 데 차이가 있다.
+	// C++17 부터는 클래스 템플릿도 타입 추론이 되어서, 코드 작성 귀찮음의 차이는 이제는 없다.
+	m.insert(std::make_pair(v[2]->_id, v[2])); // make_pair로도 임시 객체를 만들 수 있다.
+
+	m[v[3]->_id] = v[3]; // 이런 식으로 추가해도 되는데, insert와는 차이가 있음. 없던 값도 만들고, 있던 값이면 덮어 씌운다.
+
+	// []는 새로 만들기, 덮어 씌우기 둘 다 되지만, m[key] 가 없으면 기본값을 생성해줘야해서 기본 생성자가 있어야 하고, 
+	// insert는 새로 추가만 되고 덮어 씌우지를 못한다.
+	// insert_or_assign은 key가 있으면 넣은 value로 덮고, 없다면 그 value를 가진 key와의 pair을 생성한다.
+	// []와 동작은 똑같은데, 내가 의도한 대로 동작해서 안전함.
+
+	m.insert_or_assign(v[3]->_id, v[3]); // emplace와 파라미터가 같지만 내부에서 만들어 주지는 않는다.
+
+	m.emplace(v[4]->_id, 400); // vector의 emplace_back과 같다. 재료만 주면 내부에서 pair을 만들고 넣는 거임.
+	// 이렇게 하면 400이 Player(400)이 되고, 그걸 또 pair로 만들어 넣어준다.
+
+	// 만약 인자가 여러개라면, std::piecewise_construct를 인자로 넣어주거나 try_emplace를 사용하자.
+
+	// 벡터는 기본적으로 탐색을 O(N) 혹은 정렬된 상태에서 이진 탐색으로밖에 못한다.
+	// 하지만! Map은 RBT 기반. 애초에 순회를 해줄 필요가 없다. 그냥 찾아!
+
+	// 찾기
+	// 찾기의 시간 복잡도는 당연히 O(logN). 높이가 무조건 logN이 보장됨. RBT니까. 한번 내려갈때마다 후보가 반이 털림.
+	// 벡터 O(N)보다 좋다!
+	
+	// pair 찾기
+
+	auto it = m.find(100); // 해당 노드를 가리키는 map<key, value>::iterator을 반환한다.
+	
+	// value 찾기. 사실 pair이나 value나 찾는 데는 key가 필요해서. 이미 key를 알아서 보통 이걸 많이 쓴다.
+
+	Player* p = m[100];
+
+	// 근데 조심해야될 게 있다. 만약 없는 key 값을 찾으려 했다면? value가 없다고 에러가 뜰까?
+	// 크래시가 안 나고, m[100]에 접근하는 순간 value의 기본 값을 그 key 값에 넣어버린다.
+	// 즉, m[key] 문법 자체가 '있으면 찾아오고, 없으면 기본값 만들어서 줘' 이다.
+
+	// C++ STL은 그런데, UE TMap이란 게 있는데, 얘는 없는 key를 넣으면 크래시가 난다! 쉣!
+	// 다른 것도 있는데, STL에서 empty()는 비었는지 안 비었는지 확인하는 건데, UE에서는 clear()이다. 이런 쉣!!
+
+	// 만약 값이 없으면 m.end()를 반환함.
+
+	if (it != m.end())
+	{
+		// 물론, 노드는 std::pair을 들고 있다.
+		int key = it->first; // key 
+		Player* value = it->second; // value
+	}
+	
+	// 삭제
+	// vector, list, deque와는 다르게, iterator로만 erase가 되는 건 아니다.
+	// map의 erase는 key로도 가능하다!
+
+	m.erase(200);
+
+	// 순...회?
+
+	// 전에 BST에서 구현을 해봤지만, Next를 찾는 게 꽤나 걸리는 작업이다.
+	// 오른쪽 자식에서 쭉 왼쪽으로 가거나, 없다면 오른쪽 부모를 찾을때까지 올라가야한다.
+	// 다음으로 갈때마다 이 Next를 해야하기에, Map은 찾기는 아주 좋지만, 순회를 하려면 벡터가 훨씬 낫다.
+	// 그리고 벡터와 다르게, 메모리에 일렬로 붙어 있는 것도 아니고 떨어져 있는 것도 그렇다.
+
+	for (auto it = m.begin(); it != m.end(); ++it)
+	{
+		int key = it->first;
+		Player* p = it->second;
+	}
+
+	// 물론, 하나의 데이터를 하나의 자료구조로만 다뤄야하는 것은 아니다.
+	// 같은 데이터를 하나는 map으로, 하나는 벡터로 다루어 찾기, 순회용으로 둬도 된다.
+	// 그만큼의 메모리는 지불해야겠지만.
+}
+
+
 #pragma endregion
