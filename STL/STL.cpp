@@ -484,7 +484,7 @@ int main()
 #pragma endregion
 
 #pragma region Map
-
+#if 0
 
 class Player
 {
@@ -600,5 +600,50 @@ int main()
 	// 그만큼의 메모리는 지불해야겠지만.
 }
 
+#endif
+#pragma endregion
+
+#pragma UnorderedMap(HashMap)
+
+int main()
+{
+	unordered_map<int, int> um;
+
+	// 추가 O(1)
+	// 사용법은 map과 거의 같다
+
+	um.insert(std::make_pair(10, 100));
+	um[20] = 200;
+
+	// 찾기 O(1)
+
+	auto findIt = um.find(20);
+	if (findIt != um.end())
+	{
+		cout << "Find it\n";
+	}
+
+	// 삭제 O(1)
+
+	um.erase(10);
+	um.erase(findIt);
+
+	// 순회 O(N) 일일이 해쉬 함수 취해서 찾아갈 필요는 없음.
+	// 어? 찾아가려면 key에 해쉬 함수 % 버킷 수 취해서 찾아가야하잖아요.
+	// 맞는데, 외부에서 key를 통해 접근할때. unordered_map의 begin()은 실제 데이터를 가지는 노드의 첫 메모리 주소를 줌.
+	// 그래서 그냥 그거 기반으로 next 노드로 가는 식임. 다른 거 없음
+	// 
+	// 해쉬 맵의 노드는 1. 같은 버킷 안에 있을 때 서로 이어져 있고
+	// 2. 순회 용으로, 서로 다른 노드끼리도 이어져 있음.
+
+	for (auto it = um.begin(); it != um.end(); ++it)
+	{
+		int key = it->first;
+		int value = it->second;
+	}
+
+	// 근데 bucket이라는 게 있는데, 이건 뭐에요?
+	// hash 테이블의 인덱스 = key를 hash 함수를 취한 후 % 버킷 수 한 것.
+}
 
 #pragma endregion
