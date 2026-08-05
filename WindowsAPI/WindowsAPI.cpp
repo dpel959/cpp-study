@@ -1,8 +1,9 @@
 ﻿// WindowsAPI.cpp : 애플리케이션에 대한 진입점을 정의합니다.
 //
-
+#include "pch.h"
 #include "framework.h"
 #include "WindowsAPI.h"
+#include "Game.h"
 
 #define MAX_LOADSTRING 100
 
@@ -11,6 +12,7 @@ int mousePosY;
 
 // 전역 변수:
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
+HWND g_hWnd;
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 
@@ -41,18 +43,34 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINDOWSAPI));
+    Game game;
+    game.Init(g_hWnd);
 
-    MSG msg;
+    MSG msg = {};
+    uint64 prevTick = 0;
 
     // 기본 메시지 루프입니다:
-    while (GetMessage(&msg, nullptr, 0, 0))
+    while (msg.message != WM_QUIT) // WM_QUIT (종료) 메시지가 오면 종료
     {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        // PeekMessage = 메시지가 있다면!
+        if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            ::TranslateMessage(&msg);
+            ::DispatchMessage(&msg);
         }
+        else
+        {
+            uint64 now = ::GetTickCount64(); // 굳이 이거 쓸 필요 없음. 경험삼아 쓰는 것
+            
+            // 프레임 제한.
+            if (now - prevTick >= 10)
+            {
+                game.Update();
+                game.Render();
+
+                prevTick = now;
+            }
+        }        
     }
 
     return (int) msg.wParam;
@@ -105,6 +123,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    HWND hWnd = CreateWindowW(L"MyWindow", szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, nullptr, nullptr, hInstance, nullptr);
+
+   g_hWnd = hWnd;
 
    if (!hWnd)
    {
@@ -159,7 +179,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             WCHAR buffer[100];
             ::wsprintf(buffer, L"(%d, %d)", mousePosX, mousePosY);
-            ::TextOut(hdc, 0, 0, buffer, ::wcslen(buffer));
+            ::TextOut(hdc, 0, 0, buffer, static_cast<int>(::wcslen(buffer)));
 
             // 사각형 - 200,200 부터 400,400 까지 그려주세요
             ::Rectangle(hdc, 200, 200, 400, 400);
