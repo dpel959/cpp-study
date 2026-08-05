@@ -2,6 +2,7 @@
 #include "Game.h"
 #include "TimeManager.h"
 #include "InputManager.h"
+#include "SceneManager.h"
 using std::wstring;
 
 Game::Game()
@@ -23,12 +24,16 @@ void Game::Init(HWND hwnd)
 
 	GET_SINGLE(TimeManager).Init();
 	GET_SINGLE(InputManager).Init(_hwnd);
+	GET_SINGLE(SceneManager).Init();
+
+	GET_SINGLE(SceneManager).ChangeScene(SceneType::DevScene);
 }
 
 void Game::Update() 
 {
 	GET_SINGLE(TimeManager).Update();
 	GET_SINGLE(InputManager).Update();
+	GET_SINGLE(SceneManager).Update();
 }
 
 void Game::Render()
@@ -44,7 +49,7 @@ void Game::Render()
 		//TextOut이 구닥다리 방식이라 c_str()만 받는다.
 		::TextOut(_hdc, 650, 10, str.c_str(), static_cast<int>(str.size()));
 
-		::Rectangle(_hdc, 200, 200, 400, 400);
+		//::Rectangle(_hdc, 200, 200, 400, 400);
 	}
 
 
@@ -53,4 +58,6 @@ void Game::Render()
 		wstring str = std::format(L"mouse Position = X:({0}), Y:({1})", mousePos.x, mousePos.y);
 		::TextOut(_hdc, 200, 10, str.c_str(), static_cast<int>(str.size()));
 	}
+
+	GET_SINGLE(SceneManager).Render(_hdc);
 }

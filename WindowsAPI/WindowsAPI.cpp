@@ -174,24 +174,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
 
-            // 문자- hdc라는 도화지에 그릴 거고, 100 100 위치에 Test를 쓸 거에요. 문자열 길이는 4에요. 라는 뜻
-            ::TextOut(hdc, 100, 100, L"Test", 4);
+            //// 문자- hdc라는 도화지에 그릴 거고, 100 100 위치에 Test를 쓸 거에요. 문자열 길이는 4에요. 라는 뜻
+            //::TextOut(hdc, 100, 100, L"Test", 4);
 
-            WCHAR buffer[100];
-            ::wsprintf(buffer, L"(%d, %d)", mousePosX, mousePosY);
-            ::TextOut(hdc, 0, 0, buffer, static_cast<int>(::wcslen(buffer)));
+            //WCHAR buffer[100];
+            //::wsprintf(buffer, L"(%d, %d)", mousePosX, mousePosY);
+            //::TextOut(hdc, 0, 0, buffer, static_cast<int>(::wcslen(buffer)));
 
-            // 사각형 - 200,200 부터 400,400 까지 그려주세요
-            ::Rectangle(hdc, 200, 200, 400, 400);
+            //// 사각형 - 200,200 부터 400,400 까지 그려주세요
+            //::Rectangle(hdc, 200, 200, 400, 400);
 
-            // 티원 - 200,200 부터 400,400까지 그려주세요 - 비율이 같으니 그냥 원임
-            ::Ellipse(hdc, 200, 200, 400, 400);
+            //// 티원 - 200,200 부터 400,400까지 그려주세요 - 비율이 같으니 그냥 원임
+            //::Ellipse(hdc, 200, 200, 400, 400);
 
-            //선 - 300,300 부터 시작해서 400,400으로 선을 그어주세요. 거기에 이어서 500,300 까지 이어주세요
-            //만약 MoveToEx를 다시 쓰면 선을 그리는 첫 위치가 초기화 됨. (선을 끊고 싶을 때)
-            ::MoveToEx(hdc, 300, 300, nullptr);
-            ::LineTo(hdc, 400, 400);
-            ::LineTo(hdc, 500, 300);
+            ////선 - 300,300 부터 시작해서 400,400으로 선을 그어주세요. 거기에 이어서 500,300 까지 이어주세요
+            ////만약 MoveToEx를 다시 쓰면 선을 그리는 첫 위치가 초기화 됨. (선을 끊고 싶을 때)
+            //::MoveToEx(hdc, 300, 300, nullptr);
+            //::LineTo(hdc, 400, 400);
+            //::LineTo(hdc, 500, 300);
 
             EndPaint(hWnd, &ps);
         }

@@ -13,3 +13,11 @@ private:									\
 
 #define GET_SINGLE(classname)	classname::GetInstance()
 //이건 싱글톤을 쓰는 측이 편하게 쓸 수 있도록.
+
+//use-after-free를 방지하기 위한 패턴
+#define SAFE_DELETE(ptr)	\
+	if(ptr)					\
+	{						\
+		delete ptr;			\
+		ptr = nullptr;		\
+	}						
