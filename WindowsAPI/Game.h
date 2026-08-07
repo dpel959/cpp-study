@@ -14,4 +14,9 @@ public:
 private:
 	HWND _hwnd = 0;
 	HDC _hdc = 0;
+
+private:
+	RECT _rect;
+	HDC _hdcBack = {};
+	HBITMAP _bmpBack = {};
 };
