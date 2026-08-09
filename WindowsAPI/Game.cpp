@@ -26,21 +26,22 @@ void Game::Init(HWND hwnd)
 	::GetClientRect(hwnd, &_rect);
 
 	_hdcBack = ::CreateCompatibleDC(_hdc); // _hdc와 호환되는 DC를 생성. 그냥 똑같은 애를 만든다
-	// 위에만 해도 비트맵은 나오는데, 우리가 원하지 않는 아주 작은 1,1 사이즈 비트맵으로 생성 될거임.
+	// 위에 CreateCompatibleDC만 해도 비트맵은 나오는데, 우리가 원하지 않는 아주 작은 1,1 사이즈 비트맵으로 생성 될거임.
+	// _hdc는 hwnd에 맞게 ::GetDC로 하여 그 사이즈에 맞게 비트맵도 잘 가져와 짐.
 	_bmpBack = ::CreateCompatibleBitmap(_hdc, _rect.right, _rect.bottom); // 비트맵을 생성. _hdc와 호환되는 비트맵 생성.
 
 	// 우리가 원래는 hdc에 있던 걸 바로 그려줬지만, 이번에는 버퍼에 저장해야하기에 비트맵이란 개념이 등장.
-	// 비트맵은 텍스처처럼 정보를 저장하는 존재.
+	// 비트맵은 텍스처처럼 정보를 저장하는 존재. 정확히는 얘가 도화지임. DC는 도화지 작업대고. 근데 이 비트맵이 힙에 저장되는 거라 필요 없으면 삭제가 필요함.
 
 	// DC와 BMP를 연결. 리턴은 이전 쓰던 비트맵
 	HBITMAP prev = static_cast<HBITMAP>(::SelectObject(_hdcBack, _bmpBack)); 
-	::DeleteObject(prev); // 이전에 쓰던 건 필요 없으니 잘라줌.
+	::DeleteObject(prev); // 이전에 쓰던 건 필요 없으니 잘라줌. 사실 prev는 놔두고 _bmpBack을 삭제하고 갱신하고 하기는 한다.
 
 	GET_SINGLE(TimeManager).Init();
 	GET_SINGLE(InputManager).Init(_hwnd);
 	GET_SINGLE(SceneManager).Init();
 
-	GET_SINGLE(SceneManager).ChangeScene(SceneType::DevScene);
+	GET_SINGLE(SceneManager).ChangeScene(SceneType::GameScene);
 }
 
 void Game::Update() 
@@ -54,6 +55,8 @@ void Game::Render()
 {
 	uint32 fps = GET_SINGLE(TimeManager).GetFps();
 	float deltaTime = GET_SINGLE(TimeManager).GetDeltaTime();
+	// 강의와 차별점 : 뭘 그릴때는 Clear->Draw->Present가 기본이다.
+	::PatBlt(_hdcBack, 0, 0, _rect.right, _rect.bottom, WHITENESS); // _hdcBack을 하얀색으로 밀어줌
 
 	{
 		// 이번에는 WCHAR buffer (이건 고전이다) 말고 wstring을 써보자.
@@ -81,6 +84,5 @@ void Game::Render()
 	// 비트 블리트. 고속 복사이고 _hdcBack을 _hdc로 복사해! 이거임.
 	// = 더블 버퍼링.
 	::BitBlt(_hdc, 0, 0, _rect.right, _rect.bottom, _hdcBack, 0, 0, SRCCOPY);
-	// 근데 여기까지 하면 배경이 검은색이 됨
-	::PatBlt(_hdcBack, 0, 0, _rect.right, _rect.bottom, WHITENESS); // _hdcBack을 하얀색으로 밀어줌
+	// 근데 여기까지 하면 배경이 검은색이 됨. 그래서 위의 PatBlt를 함
 }
