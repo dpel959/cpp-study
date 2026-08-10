@@ -21,4 +21,12 @@ struct Pos
 {
 	float x = 0;
 	float y = 0;
+
+	Pos& operator+= (Pos other)
+	{
+		x += other.x;
+		y += other.y;
+
+		return *this;
+	}
 };

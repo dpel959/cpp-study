@@ -20,7 +20,9 @@ enum class KeyType : uint8
 	W = 'W',
 	A = 'A',
 	S = 'S',
-	D = 'D'
+	D = 'D',
+	Q = 'Q',
+	E = 'E'
 };
 
 enum class KeyState : uint8

@@ -23,7 +23,8 @@ void Missile::Update()
 {
 	float deltaTime = GET_SINGLE(TimeManager).GetDeltaTime();
 
-	_pos.y -= deltaTime * _stat.speed;
+	_pos.x += deltaTime * ::cos(_angle) * _stat.speed;
+	_pos.y -= deltaTime * ::sin(_angle)* _stat.speed;
 	
 	// 충돌. 유니티나 언리얼같이 어디 반경에 들어오면 감지하고 그런거 없다. 씬 전부를 뒤져봐야한다...
 	
@@ -57,7 +58,7 @@ void Missile::Update()
 	}
 
 
-	// 화면 끝을 넘어가면 삭제
+	// 화면 끝을 넘어가면 삭제. 이것도 각도를 자유롭게 할 수 있으면 바꿔줘야한다.
 	if (_pos.y < -200)
 	{
 		GET_SINGLE(ObjectManager).Remove(this);
