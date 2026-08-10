@@ -3,6 +3,7 @@
 #include "TimeManager.h"
 #include "InputManager.h"
 #include "SceneManager.h"
+#include "ResourceManager.h"
 using std::wstring;
 
 Game::Game()
@@ -13,6 +14,7 @@ Game::Game()
 Game::~Game()
 {
 	GET_SINGLE(SceneManager).Clear();
+	GET_SINGLE(ResourceManager).Clear();
 }
 
 void Game::Init(HWND hwnd)
@@ -40,6 +42,7 @@ void Game::Init(HWND hwnd)
 	GET_SINGLE(TimeManager).Init();
 	GET_SINGLE(InputManager).Init(_hwnd);
 	GET_SINGLE(SceneManager).Init();
+	GET_SINGLE(ResourceManager).Init();
 
 	GET_SINGLE(SceneManager).ChangeScene(SceneType::GameScene);
 }

@@ -46,11 +46,18 @@ void GameScene::Update()
 	//	_player->Update();
 	//}
 
-	const std::vector<Object*> objects =  GET_SINGLE(ObjectManager).GetObjects();
+	std::vector<Object*> objects =  GET_SINGLE(ObjectManager).GetObjects();
 
 	for (Object* object : objects)
 	{
 		object->Update(); // 사실 오브젝트 매니저의 Udpate에서 돌려줘도 된다.
+	}
+
+
+
+	for (Object* object : objects)
+	{
+		objects.push_back(object);
 	}
 }
 

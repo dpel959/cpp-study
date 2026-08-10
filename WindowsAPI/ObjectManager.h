@@ -35,6 +35,18 @@ public:
 		return object;
 	}
 
+	std::vector<Object*> GetPendingAddQ()
+	{
+		return _pendingAddQ;
+	}
+
+	std::vector<Object*> GetPendingRemoveQ()
+	{
+		return _pendingRemoveQ;
+	}
+
 private:
 	std::vector<Object*> _objects;
+	std::vector<Object*> _pendingAddQ;
+	std::vector<Object*> _pendingRemoveQ;
 };
