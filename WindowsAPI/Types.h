@@ -17,16 +17,91 @@ struct Stat
 	float speed = 0;
 };
 
-struct Pos
+struct Vector
 {
-	float x = 0;
-	float y = 0;
+public:
 
-	Pos& operator+= (Pos other)
+	Vector() {};
+	Vector(float x, float y) : x(x), y(y) {}
+	Vector(POINT pt) : x(static_cast<float>(pt.x)), y(static_cast<float>(pt.y)) {}
+
+	Vector operator+ (const Vector& other)
+	{
+		Vector ret;
+		ret.x = x + other.x;
+		ret.y = y + other.y;
+		return ret;
+	}
+
+	Vector operator- (const Vector& other)
+	{
+		Vector ret;
+		ret.x = x - other.x;
+		ret.y = y - other.y;
+		return ret;
+	}
+
+	Vector operator* (const float value)
+	{
+		Vector ret;
+		ret.x = value * x;
+		ret.y = value * y;
+		return ret;
+	}
+
+	Vector& operator+= (const Vector& other)
 	{
 		x += other.x;
 		y += other.y;
-
 		return *this;
 	}
+
+	Vector& operator-= (const Vector& other)
+	{
+		x -= other.x;
+		y -= other.y;
+		return *this;
+	}
+
+	Vector operator*= (const float value)
+	{
+		x *= value;
+		y *= value;
+		return *this;
+	}
+
+	float LengthSquared()
+	{
+		return x * x + y * y;
+	}
+
+	float Length()
+	{
+		return ::sqrt(LengthSquared());
+	}
+
+	void Normalize()
+	{
+		float length = Length();
+		// float 값이니까... 오차가 있을수도 있으니 < 0으로는 하지 않는다.
+		if (length < 0.0000000001f)
+		{
+			return;
+		}
+		else
+		{
+			x = x / length;
+			y = y / length;
+		}
+	}
+
+	float Dot(Vector& other)
+	{
+		return (x * other.x + y * other.y);
+	}
+
+	float x = 0;
+	float y = 0;
 };
+
+using Pos = Vector;

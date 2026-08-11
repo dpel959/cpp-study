@@ -47,6 +47,8 @@ public:
 
 private:
 	std::vector<Object*> _objects;
+	
+	// 개선점 : 벡터가 중간에 수정되어야한다면 펜딩 큐를 쓰자!
 	std::vector<Object*> _pendingAddQ;
 	std::vector<Object*> _pendingRemoveQ;
 };
