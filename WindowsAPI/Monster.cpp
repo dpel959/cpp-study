@@ -14,7 +14,14 @@ Monster::~Monster()
 
 void Monster::Init()
 {
-	_stat = { 100,100,10 };
+	_stat = Stat{ 100,100,10 };
+
+	_pos = Pos{ 400,300 };
+
+	_lookPos = Pos{ 400,70 };
+
+	_lookDir = _lookPos - _pos;
+	_lookDir.Normalize();
 }
 
 void Monster::Update()
@@ -24,45 +31,65 @@ void Monster::Update()
 
 void Monster::Render(HDC hdc)
 {
-	Vector mousePos = GET_SINGLE(InputManager).GetMousePos();
+	Utils::DrawCircle(hdc, _pos, 100);
 
+	// frontDir
 	static HPEN pen = ::CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
 	HPEN oldpen = static_cast<HPEN>(::SelectObject(hdc, pen));
 
-	Utils::DrawLine(hdc, _pt1, _pt2);
-	Utils::DrawLine(hdc, _pt2, _pt3);
-	Utils::DrawLine(hdc, _pt3, _pt1);
+	{
+		Utils::DrawLine(hdc, _pos, _lookPos);
+	}
 
 	::SelectObject(hdc, oldpen);
 
-	Utils::DrawLine(hdc, _pt1, mousePos);
-	Utils::DrawLine(hdc, _pt2, mousePos);
-	Utils::DrawLine(hdc, _pt3, mousePos);
+	// 역삼각함수를 이용해, mousePos가 Monster의 뒤에 있는지, 안 치고 있는지를 판별하자!
+	// (몬헌의 뒷치기 보너스 비슷한.)
+	Vector mousePos = GET_SINGLE(InputManager).GetMousePos();
+	Vector monsterToMouseDir = mousePos - _pos;
+	monsterToMouseDir.Normalize(); // 이 벡터로 해야하는 게 뭘까? 바로 몬스터의 '정면'(lookDir)과 이 벡터의 각도 구함이다.
+	
+	// 근데 각을 어떻게 구해요? 애초에 cos이나 sin 값을 알아야 역삼각함수를 응용하는 거 아니에요?
+	// 내적을 쓴다. 지금 각 벡터를 정규화해서 크기가 1이다. 그러므로 |v1||v2|cosθ 에서 cosθ만 남는다.
 
-	Vector v12 = _pt2 - _pt1;
-	Vector v1m = mousePos - _pt1;
-	Vector v13 = _pt3 - _pt1;
+	float dot = monsterToMouseDir.Dot(_lookDir); // 이게 cosθ
+	float radian = ::acos(dot); // acos == arccos 그리고, 결과값은 당연히 'radian'체계로 뱉는다.
+	// π는 180도랑 똑같은데, 이게 뭔 소리인가 싶을텐데, π는 숫자로는 3.14... 이다. 이걸로 돌려준다고!
+	// π rad = 3.14... rad = 180도
 
-	// 사실 정규화 해줄 필요는 없지만, 너무 계산값을 크게 하지 않기 위해.
-	v12.Normalize();
-	v1m.Normalize();
-	v13.Normalize();
+	// 개선점 : 제공해주는 π가 있지만, 일단은!
+	float angle = radian * 180 / 3.14f;
 
-	// 원래 결과 값으로 벡터가 나왔겠지만, 지금은 계수만 이용한다.
-	// 12 와 1m의 외적, 1m과 13의 외적.
-	float c1 = v12.Cross(v1m);
-	float c2 = v1m.Cross(v13);
+	// 어, 그런데 180도를 넘어가면 180도에서 줄어드는데요? -> acos의 범위는 0 ~ π/2 이므로! 여기서 못 벗어난다.
+	// 그래서 180도 이상 돌면, 반대쪽에서 돈 것과 마찬가지인 각도가 된다. 그런데 190도 이상을 원한다면 어떻게 할까?
+	
+	// 1) 개억지. 애초에 내적을 하는 다른 벡터가 y축 위를 향해야만 가능하다. 그래야 x < 0이 180도를 넘는다는 하드코딩임.
 
-	// 부채꼴 안에 있을 때! 만약 둘다 음수라면 부채꼴 밖에 있을 것이다.
-	if (c1 >= 0 && c2 >= 0)
+	//if (monsterToMouseDir.x < 0)
+	//{
+	//	angle = 360 - angle;
+	//}
+
+	// 그러면 알 것이다. '축'을 중심으로 보는 게 아니라, '나와 내적을 하는 벡터'를 기준으로 내가 왼쪽에 있는 지, 오른쪽에 있는 지 봐야한다.
+	// 2가지 방법이 있다고 한다. 하나는 사영을 내려서(내적) 방향을 확인하는 방법, 하나는 외적을 해서 확인하는 방법.
+	// 그런데 외적이 더 깔끔하다. acos은 범위가 0 ~ π/2 이고, 외적의 sinθ의 값이 0 ~ π/2 동안 변하기 않는다.
+	// 즉, 외적의 값이 부호가 변한다/변하지 않는다로 acos의 범위를 벗어났냐 아니냐를 판별할 수 있는 것이다.
+	// cos의 '1대1 대응'의 범위와, sin의 '값의 양 음이 변하는 기준'이 같기에 생기는 시너지이다. 오히려 같은 cosθ를 이용하는 내적이 잘 안 맞는 게 아이러니.
+
+	// 2) 외적
+
+	float cross = monsterToMouseDir.Cross(_lookDir);
+	
+	// 외적의 부호가 바뀌었다면, 그제서야 180도를 넘어갔다는 것이다. 부호가 양 인지 음 인지는 엔진과 외적 순서에 따라 다르다.
+
+	if (cross > 0)
 	{
-		// 부채꼴 안
-	}
-	else
-	{
-		// 점이 부채꼴 외부에 있을 때
+		angle = 360 - angle;
 	}
 
-	std::wstring str = std::format(L"c1({0}), c2({1})", c1, c2);
-	Utils::DrawTextW(hdc, { 20,50 }, str);
+	{
+		std::wstring str = std::format(L"[angle  : {0}]", angle);
+		Utils::DrawTextW(hdc, { 20,50 }, str);
+	}
+
 }

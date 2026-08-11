@@ -17,9 +17,6 @@ GameScene::~GameScene()
 void GameScene::Init()
 {
 	Monster* monster = GET_SINGLE(ObjectManager).CreateObject<Monster>();
-
-	monster->SetPos(Pos{400 , 400});
-
 	GET_SINGLE(ObjectManager).Add(monster);
 }
 
