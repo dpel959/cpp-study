@@ -95,9 +95,14 @@ public:
 		}
 	}
 
-	float Dot(Vector& other)
+	float Dot(Vector other)
 	{
 		return (x * other.x + y * other.y);
+	}
+
+	float Cross(Vector other)
+	{
+		return x * other.y - y * other.x;
 	}
 
 	float x = 0;
