@@ -38,7 +38,6 @@ void FortressScene::Init()
 		GET_SINGLE(ObjectManager).Add(player);
 
 		player->SetPos(Vector{ 700, 400 });
-		player->SetPos(Vector{ 100, 400 });
 		player->SetPlayerId(1);
 		player->SetPlayerTurn(false);
 	}

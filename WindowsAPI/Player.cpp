@@ -4,7 +4,9 @@
 #include "TimeManager.h"
 #include "ObjectManager.h"
 #include "ResourceManager.h"
+#include "UIManager.h"
 #include "LineMesh.h"
+#include "Bullet.h"
 
 Player::Player() : Object(ObjectType::Player)
 {
@@ -37,6 +39,8 @@ void Player::Update()
 		return;
 	}
 
+	UpdateFireAngle();
+	
 	if (GET_SINGLE(InputManager).GetButton(KeyType::A))
 	{
 		_pos.x -= deltaTime * _stat.speed;
@@ -50,15 +54,17 @@ void Player::Update()
 		_dir = Dir::Right;
 	}
 
+	// 개선점 : 이것도 움직이는 속도가 하드코딩임. 고쳐주자
 	if (GET_SINGLE(InputManager).GetButton(KeyType::W))
 	{
-		//_barrelangle = aTime * _stat.speed;
-	}
+		// min, max보다 clamp 처리가 깔끔!
 
+		_fireAngle = std::clamp(_fireAngle + 50 * deltaTime, 0.f, 75.f);
+	}
 
 	if (GET_SINGLE(InputManager).GetButton(KeyType::S))
 	{
-		//_pos.y += deltaTime * _stat.speed;
+		_fireAngle = std::clamp(_fireAngle - 50 * deltaTime, 0.f, 75.f);
 	}
 
 	if (GET_SINGLE(InputManager).GetButton(KeyType::Q))
@@ -71,9 +77,27 @@ void Player::Update()
 
 	}
 
-	if (GET_SINGLE(InputManager).GetButtonDown(KeyType::SpaceBar))
+	if (GET_SINGLE(InputManager).GetButton(KeyType::SpaceBar))
 	{
+		float powerPercent = GET_SINGLE(UIManager).GetPowerPercent();
+		powerPercent = std::min(100.f, powerPercent + 100 * deltaTime);
+		GET_SINGLE(UIManager).SetPowerPercent(powerPercent);
+	}
 
+	// 개선점 : 이것도 스피드가 하드.. 고치자
+	if (GET_SINGLE(InputManager).GetButtonUp(KeyType::SpaceBar))
+	{
+		_playerTurn = false;
+
+		float powerPercent = GET_SINGLE(UIManager).GetPowerPercent();
+		float speed = 10.f * powerPercent;
+		float angle = GET_SINGLE(UIManager).GetBarrelAngle();
+
+		Bullet* bullet = GET_SINGLE(ObjectManager).CreateObject<Bullet>();
+		bullet->SetPos(_pos);
+		// 지금 angle이 호도법이 아니라 도수법으로 되어있어서, 호도법으로 바꿔줌
+		bullet->SetSpeed(Vector{ speed * ::cos(angle * PI / 180), -speed * ::sin(angle * PI / 180)});
+		GET_SINGLE(ObjectManager).Add(bullet);
 	}
 }
 
@@ -130,4 +154,20 @@ std::wstring Player::GetMeshKey()
 	
 	// 개선점 : 지금은 2개밖에 없으므로.
 	return L"CanonTank";
+}
+
+void Player::UpdateFireAngle()
+{
+	// fireAngle을 굳이 플레이어마다 왜 들고 있어요? -> 플레이어마다 다르기도 하고, 플레이어의 방향따라서 반전되어서.
+	// 개선점 : 어후 PlayerAngle은 왜 얘가 들고있대냐..
+	if (_dir == Dir::Left)
+	{
+		GET_SINGLE(UIManager).SetPlayerAngle(180);
+		GET_SINGLE(UIManager).SetBarrelAngle(180 - _fireAngle);
+	}
+	else
+	{
+		GET_SINGLE(UIManager).SetPlayerAngle(0);
+		GET_SINGLE(UIManager).SetBarrelAngle(_fireAngle);
+	}
 }

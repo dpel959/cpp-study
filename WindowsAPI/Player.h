@@ -22,10 +22,11 @@ public:
 	PlayerType GetPlayerType() { return _playerType; }
 	bool GetPlayerTurn() { return _playerTurn; }
 
+	void UpdateFireAngle();
+
 public:
 	int32 _playerId = 0;
 	bool _playerTurn = false;
 	float _fireAngle = 0.f;
 	PlayerType _playerType = PlayerType::CanonTank;
-	Dir _dir = Dir::Left;
 };
