@@ -27,3 +27,16 @@ void Utils::DrawLine(HDC hdc, Pos from, Pos to)
 }
 
 // 아니 이렇게 다 int로 해줄 거면 그냥 Pos를 int로 하지 왜 flaot로 했냐? -> 그러면 세부 움직임이 적용이 안 될 때가 있어서.
+// 강의와 차별점 : std::random 사용, Utils화
+
+int32 RandomUtils::GetRandomInt(int start, int end)
+{
+	static std::uniform_int_distribution<int32> dis(start, end);
+	return dis(gen);
+}
+
+float RandomUtils::GetRandomFloat(float start, float end)
+{
+	static std::uniform_real_distribution<float> dis(start, end);
+	return dis(gen);
+}

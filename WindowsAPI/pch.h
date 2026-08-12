@@ -18,3 +18,5 @@
 #include "Types.h"
 #include "Enums.h"
 #include "Defines.h" // 매크로 같은 것들
+#include "Utils.h"
+#include "Values.h"

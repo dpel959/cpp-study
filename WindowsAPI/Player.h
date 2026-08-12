@@ -12,9 +12,20 @@ public:
 	virtual void Update() override;
 	virtual void Render(HDC hdc) override;
 
-	Pos GetFirePos();
+	std::wstring GetMeshKey(); // 리소스 판별용
+	
+	void SetPlayerType(PlayerType playerType) { _playerType = playerType; }
+	void SetPlayerId(int32 playerId) { _playerId = playerId; }
+	void SetPlayerTurn(bool playerTurn) { _playerTurn = playerTurn;}
+
+	int32 GetPlayerId() { return _playerId; }
+	PlayerType GetPlayerType() { return _playerType; }
+	bool GetPlayerTurn() { return _playerTurn; }
 
 public:
-	float _barrelAngle = 0.f;
-	float _barrelLength = 100.f;
+	int32 _playerId = 0;
+	bool _playerTurn = false;
+	float _fireAngle = 0.f;
+	PlayerType _playerType = PlayerType::CanonTank;
+	Dir _dir = Dir::Left;
 };

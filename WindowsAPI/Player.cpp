@@ -1,10 +1,8 @@
 ﻿#include "pch.h"
 #include "Player.h"
-#include "Utils.h"
 #include "InputManager.h"
 #include "TimeManager.h"
 #include "ObjectManager.h"
-#include "Missile.h"
 #include "ResourceManager.h"
 #include "LineMesh.h"
 
@@ -34,78 +32,102 @@ void Player::Update()
 
 	// 거리 = 시간 * 속도 !
 
+	if (_playerTurn == false)
+	{
+		return;
+	}
+
 	if (GET_SINGLE(InputManager).GetButton(KeyType::A))
 	{
 		_pos.x -= deltaTime * _stat.speed;
+		_dir = Dir::Left;
 	}
 
 
 	if (GET_SINGLE(InputManager).GetButton(KeyType::D))
 	{
 		_pos.x += deltaTime * _stat.speed;
+		_dir = Dir::Right;
 	}
 
 	if (GET_SINGLE(InputManager).GetButton(KeyType::W))
 	{
-		_pos.y -= deltaTime * _stat.speed;
+		//_barrelangle = aTime * _stat.speed;
 	}
 
 
 	if (GET_SINGLE(InputManager).GetButton(KeyType::S))
 	{
-		_pos.y += deltaTime * _stat.speed;
+		//_pos.y += deltaTime * _stat.speed;
 	}
 
 	if (GET_SINGLE(InputManager).GetButton(KeyType::Q))
 	{
-		_barrelAngle += 10 * deltaTime;
+
 	}
 
 	if (GET_SINGLE(InputManager).GetButton(KeyType::E))
 	{
-		_barrelAngle += -10 * deltaTime;
+
 	}
 
 	if (GET_SINGLE(InputManager).GetButtonDown(KeyType::SpaceBar))
 	{
-		Missile* missile = GET_SINGLE(ObjectManager).CreateObject<Missile>();
-		missile->SetPos(_pos);
-		missile->SetAngle(_barrelAngle);
-		GET_SINGLE(ObjectManager).Add(missile);
+
 	}
 }
 
 void Player::Render(HDC hdc)
 {
-	const LineMesh* mesh = GET_SINGLE(ResourceManager).GetLineMesh(L"Player");
+	const LineMesh* mesh = GET_SINGLE(ResourceManager).GetLineMesh(GetMeshKey());
+
 	if (mesh != nullptr)
 	{
-		mesh->Render(hdc, _pos);
+		if (_dir == Dir::Left)
+		{
+			mesh->Render(hdc, _pos, 0.5f, 0.5f);
+		}
+		else
+		{
+			mesh->Render(hdc, _pos, -0.5f, 0.5f);
+		}
 	}
 
-	// 계속 delete 시켜서 성능을 먹기 보다는 유지시키는 게 좋다.
+	if (_playerTurn)
+	{
+		// 개선점 : 물론, 이런식으로 하드 코딩하면 안되긴 한다...
+		RECT rect;
+		rect.bottom = static_cast<LONG>(_pos.y - 60);
+		rect.left = static_cast<LONG>(_pos.x - 10);
+		rect.right = static_cast<LONG>(_pos.x + 10);
+		rect.top = static_cast<LONG>(_pos.y - 80);
+
+		static HBRUSH brush = ::CreateSolidBrush(RGB(250, 236, 197));
+		HBRUSH oldBrush = static_cast<HBRUSH>(::SelectObject(hdc, brush));
+
+		::Ellipse(hdc, rect.left, rect.top, rect.right, rect.bottom);
+
+		::SelectObject(hdc, oldBrush);
+	}
+
+	// 강의와 차별점 : 계속 delete 시켜서 성능을 먹기 보다는 유지시키는 게 좋다.
 	// static은 프로그램이 종료되면 알아서 회수를 해주기에, DeleteObject를 할 필요는 없지만, 습관상 해주면 좋다.
 	// 하지만 일단은 패스.
 
 	static HPEN pen = ::CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
 	HPEN oldPen = static_cast<HPEN>(::SelectObject(hdc, pen)); // SelectObject가 바꿔치기 용도네.
 
-	Utils::DrawLine(hdc, _pos, GetFirePos()); 
-
 	::SelectObject(hdc, oldPen);
 }
 
-// 각도를 알때, x는 cos, y는 sin.
-Pos Player::GetFirePos()
+// 실제로 직업군마다 다르게 동작하는 게 있으면, 이런 식으로 해도 된다.
+std::wstring Player::GetMeshKey()
 {
-	Pos firePos = _pos;
-
-	// 놀랍게도 cos는 기본 지원.
-	// cos을 왜 곱하냐? 'cos 는 그 각도의 빗변 1에 대한 가로 값의 비율이니까.' 
-	// 그래서 실제로 적용될 길이 * 비율을 곱해줘야 값이 나오는 것이다.
-
-	// 어? 근데 왜 y는 -를 취해요? : WindowsAPI에서 y값이 양수면 아래로 향해서.
-	firePos += {_barrelLength * ::cos(_barrelAngle), -_barrelLength * ::sin(_barrelAngle)};
-
-	return firePos;
+	if (_playerType == PlayerType::MissileTank)
+	{
+		return L"MissileTank";
+	}
+	
+	// 개선점 : 지금은 2개밖에 없으므로.
+	return L"CanonTank";
 }
