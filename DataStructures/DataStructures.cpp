@@ -3,6 +3,7 @@
 #include <stack>
 #include <queue>
 #include <utility>
+#include <limits>
 
 using std::vector, std::cout, std::swap, std::less, std::greater
 , std::stack, std::queue, std::priority_queue;
@@ -399,27 +400,37 @@ vector<vector<int>> adjacent;
 // 내가 방문한 곳을 추척해야 함!
 vector<bool> visited;
 
-void CreateGraph()
+void CreateAdjacencyListGraph()
 {
 	vertices.resize(6);
 
-	// 인접 리스트
-	//adjacent = vector<vector<int>>(6);
-	//adjacent[0] = { 1,3 };
-	//adjacent[1] = { 0, 2, 3 };
-	//adjacent[3] = { 4 };
-	//adjacent[5] = { 4 };
+	adjacent = vector<vector<int>>(6);
+	adjacent[0] = { 1, 3 };
+	adjacent[1] = { 0, 2, 3 };
+	adjacent[2] = { 1 };
+	adjacent[3] = { 0, 1, 4 };
+	adjacent[4] = { 3, 5 };
+	adjacent[5] = { 4 };
+}
 
-	// 인접 행렬
-	//adjacent = vector<vector<int>>
-	//{
-	//	{0,1,0,1,0,0},
-	//	{1,0,1,1,0,0},
-	//	{0,0,0,0,0,0},
-	//	{0,0,0,0,1,0},
-	//	{0,0,0,0,0,0},
-	//	{0,0,0,0,1,0}
-	//};
+void CreateAdjacencyMatrixGraph()
+{
+	vertices.resize(6);
+
+	adjacent = vector<vector<int>>
+	{
+		{0,1,0,1,0,0},
+		{1,0,1,1,0,0},
+		{0,1,0,0,0,0},
+		{1,1,0,0,1,0},
+		{0,0,0,1,0,1},
+		{0,0,0,0,1,0}
+	};
+}
+
+void CreateDijkstraGraph()
+{
+	vertices.resize(6);
 
 	// 다익스트라 인접 행렬 (가중치)
 	adjacent = vector<vector<int>>(6, vector<int>(6, -1));
@@ -435,31 +446,37 @@ void CreateGraph()
 /// DFS 재귀함수버전
 ///
 
-void DFS(int here)
+void ListDFS(int here)
 {
 	visited[here] = true;
 
 	cout << "Visited : " << here << '\n';
 
 	// 인접 리스트 버전. adjacent 자기 리스트 안에 있는 것만 체크하면 됨
-	//for (int i = 0; i < adjacent[here].size(); ++i)
-	//{
-	//	int there = adjacent[here][i];
-	//	if (visited[there] == false)
-	//	{
-	//		DFS(there);
-	//	}
-	//}
+	for (int there : adjacent[here])
+	{
+		if (visited[there] == false)
+		{
+			ListDFS(there);
+		}
+	}
+}
+
+void MatrixDFS(int here)
+{
+	visited[here] = true;
+
+	cout << "Visited : " << here << '\n';
 
 	// 인접 행렬 버전. 뭐가 이어진지 봐야함
 
-	int size = adjacent.size();
+	int size = static_cast<int>(adjacent.size());
 
 	for (int i = 0; i < size; ++i)
 	{
-		if (adjacent[here][i] == 1 && visited[i] == false)
+		if (adjacent[here][i] > 0 && visited[i] == false)
 		{
-			DFS(i);
+			MatrixDFS(i);
 		}
 	}
 	
@@ -471,8 +488,8 @@ void DFS(int here)
 /// 
 /// V는 정점의 총 갯수, E는 간선의 총 갯수이다.
 /// 왜 VE가 아닌 V+E일까.
-/// 모든 V가 같은 E만큼의 간선을 갖고 있는 것이 아니다.
-/// V에서 E만큼 for문을 돌지 않는다.
+/// 각 정점의 인접 리스트를 도는 횟수를 전부 합치면 전체 간선 수 E만큼이다.
+/// (무방향 그래프에서는 같은 간선을 양쪽 정점에 저장하므로 정확히는 2E지만, O(E)인 것은 같다.)
 /// 
 /// 인접 행렬의 DFS 시간 복잡도 O(V^2)
 /// 
@@ -486,14 +503,15 @@ void DFS(int here)
 /// 
 /// 즉, 그냥 상황따라 다르다는 것이다. 
 /// 희소 그래프는 인접 리스트, 밀집 그래프는 인접 행렬이 조회에 더 우수하다.
-/// 물론 비슷하다면 조회가 O(1)로 되는 인접 행렬이 더 우수할 것이다.
+/// 물론 두 정점이 연결되었는지 하나만 조회할 때는 O(1)인 인접 행렬이 더 유리하다.
+/// 하지만 전체 순회까지 인접 행렬이 무조건 더 우수하다는 뜻은 아니다.
 /// 트레이드 오프는 언제나 있다. 정답은 없다! 절대로!
 /// 
 /// 근데 그렇다고 DFS가 특히 느린거냐면, 그렇지도 않다. 사실 BFS도 똑같다.
 /// 
 /// DFS의 문제는 다음과 같다.
-/// 1. 재귀함수 특유의 스택 오버플로우 문제. (대충 N이 10만 이상이면 터진다)
-/// 2. BFS가 아님으로 인한 최단 경로 서치할때의 백트래킹 문제. (엉뚱한 길을 끝까지 들어갔다가 나옴)
+/// 1. 재귀함수 특유의 스택 오버플로우 문제. (몇 번에서 터지는지는 스택 크기와 함수가 사용하는 메모리에 따라 다르다.)
+/// 2. 무가중치 그래프의 최단 경로를 보장하지 않는다. (엉뚱한 길을 끝까지 들어갔다가 나올 수도 있음)
 /// 
 
 /// 
@@ -502,15 +520,28 @@ void DFS(int here)
 /// 그냥 시작점부터 순차적으로 들르는 게 끝임. 가짜 순회지. 그래서 안 쓰는 것
 /// 
 
-void DfsAll()
+void ListDfsAll()
 {
-	int size = adjacent.size();
+	int size = static_cast<int>(adjacent.size());
 	
 	for (int i = 0; i < size; ++i)
 	{
 		if (visited[i] == false)
 		{
-			DFS(i);
+			ListDFS(i);
+		}
+	}
+}
+
+void MatrixDfsAll()
+{
+	int size = static_cast<int>(adjacent.size());
+
+	for (int i = 0; i < size; ++i)
+	{
+		if (visited[i] == false)
+		{
+			MatrixDFS(i);
 		}
 	}
 }
@@ -518,41 +549,44 @@ void DfsAll()
 /// 
 /// 근데 재귀함수로 안 하고 싶다면 어떻게 해야할까? stack으로 구현하자.
 /// 재귀함수 = stack이다. 이건 진짜 기억해두면 좋음. 
-/// 재귀는 이어진 정점들의 앞부터 들르는데, 스택은 뒤부터 들름.
+/// 이웃을 같은 순서로 스택에 넣으면 재귀와 반대 순서로 들를 수 있음.
+/// 스택에 역순으로 넣으면 재귀 DFS와 같은 방문 순서를 만들 수도 있다.
 /// 
 
-void StackDfs(int here)
+void ListStackDfs(int here)
 {
 	stack<int> dfsStack;
 	dfsStack.push(here);
 	visited[here] = true;
 
 	// 인접 리스트 버전
+	while (dfsStack.empty() == false)
+	{
+		here = dfsStack.top();
+		dfsStack.pop();
 
-	//while (dfsStack.empty() == false)
-	//{
-	//	int here = dfsStack.top();
+		cout << "Visited : " << here << '\n';
 
-	//	cout << "Visited : " << here << '\n';
+		for (int there : adjacent[here])
+		{
+			if (visited[there] == false)
+			{
+				dfsStack.push(there);
+				visited[there] = true;
+			}
+		}
+	}
+}
 
-	//	dfsStack.pop();
-
-	//	int size = adjacent[here].size();
-
-	//	for (int i = 0; i < size; ++i)
-	//	{
-	//		int there = adjacent[here][i];
-	//		if (visited[there] == false)
-	//		{
-	//			dfsStack.push(there);
-	//			visited[there] = true;
-	//		}
-	//	}
-	//}
+void MatrixStackDfs(int here)
+{
+	stack<int> dfsStack;
+	dfsStack.push(here);
+	visited[here] = true;
 
 	// 인접 행렬 버전
 
-	int size = adjacent.size();
+	int size = static_cast<int>(adjacent.size());
 
 	while (dfsStack.empty() == false)
 	{
@@ -565,7 +599,7 @@ void StackDfs(int here)
 		for (int i = 0; i < size; ++i)
 		{
 			
-			if (adjacent[here][i] == 1 && visited[i] == false)
+			if (adjacent[here][i] > 0 && visited[i] == false)
 			{
 				dfsStack.push(i);
 				visited[i] = true;
@@ -576,56 +610,88 @@ void StackDfs(int here)
 	}
 }
 
+void ListStackDfsAll()
+{
+	int size = static_cast<int>(adjacent.size());
+
+	for (int i = 0; i < size; ++i)
+	{
+		if (visited[i] == false)
+		{
+			ListStackDfs(i);
+		}
+	}
+}
+
+void MatrixStackDfsAll()
+{
+	int size = static_cast<int>(adjacent.size());
+
+	for (int i = 0; i < size; ++i)
+	{
+		if (visited[i] == false)
+		{
+			MatrixStackDfs(i);
+		}
+	}
+}
+
 ///
 /// BFS (Breadth First Search) 너비 우선 서치
 /// 먼저 발견한 놈에게 먼저 접근한다. = Queue를 사용한다.
-/// visited를 사용하지 않는다. discovered를 사용한다.
+/// 여기서는 큐에 넣은 순간을 표시하기 위해 visited 대신 discovered라는 이름을 사용한다.
+/// 이름을 visited로 써도 상관없고, 중요한 건 큐에 넣을 때 바로 표시해서 중복 삽입을 막는 것.
 /// 
 /// BFS는 여러가지를 좀 기록해주자! 얘는 누가 발견했는지, (최단 거리 경로 추적)
-/// start로부터 얼만큼 떨어져 있는지 정보 수집이 좀 중요해서. (최단 거리)
+/// start로부터 얼만큼 떨어져 있는지 정보 수집이 좀 중요해서. (모든 간선 비용이 같을 때의 최단 거리)
 /// 
 
 vector<bool> discovered;
+vector<int> bfsParent;
+vector<int> bfsDistance;
 
-void BFS(int here)
+void ListBFS(int here)
 {
-	vector<int> parent(6, -1); // -1이면 아무도 발견 못한 것. (고립)
-
-	vector<int> dist(6, -1); // -1이면 아무도 발견 못한 것. (고립)
-
 	queue<int> q;
 	q.push(here);
 	discovered[here] = true; // stack 형식 DFS와 유사하죠? 예약과 visited/discovered는 같이 움직임.
 
-	parent[here] = here; // 시작점은 자기가 자신을 발견한 것으로 처리
-	dist[here] = 0; // 시작점과의 거리는 0. (자기 자신)
+	bfsParent[here] = here; // 시작점은 자기가 자신을 발견한 것으로 처리
+	bfsDistance[here] = 0; // 시작점과의 거리는 0. (자기 자신)
 
-	//// 인접 리스트 방식
+	// 인접 리스트 방식
+	while (q.empty() == false)
+	{
+		here = q.front();
+		q.pop();
 
-	//while (q.empty() == false)
-	//{
-	//	here = q.front();
+		cout << "Visited : " << here << '\n';
 
-	//	cout << "Visited : " << here << '\n';
+		for (int there : adjacent[here])
+		{
+			if (discovered[there] == false)
+			{
+				q.push(there);
+				discovered[there] = true;
+				bfsParent[there] = here;
+				bfsDistance[there] = bfsDistance[here] + 1;
+			}
+		}
+	}
+}
 
-	//	q.pop();
+void MatrixBFS(int here)
+{
+	queue<int> q;
+	q.push(here);
+	discovered[here] = true;
 
-	//	int size = adjacent[here].size();
-
-	//	for (int i = 0; i < size; ++i)
-	//	{
-	//		int there = adjacent[here][i];
-	//		if (discovered[there] == false)
-	//		{
-	//			q.push(there);
-	//			discovered[there] = true;
-	//		}
-	//	}
-	//}
+	bfsParent[here] = here;
+	bfsDistance[here] = 0;
 
 	// 인접 행렬 방식
 
-	int size = adjacent.size();
+	int size = static_cast<int>(adjacent.size());
 
 	// 같은 깊이 애들을 동시에 돌려줄 필요가 없는게, 어차피 큐에서 FIFO로 알아서 먼저 나올거라서.
 
@@ -639,27 +705,48 @@ void BFS(int here)
 
 		for (int i = 0; i < size; ++i)
 		{		
-			if(adjacent[here][i] == 1 && discovered[i] == false)
+			if(adjacent[here][i] > 0 && discovered[i] == false)
 			{
 				q.push(i);
 				discovered[i] = true;
 
-				parent[i] = here;
-				dist[i] = dist[here] + 1;
+				bfsParent[i] = here;
+				bfsDistance[i] = bfsDistance[here] + 1;
 			}
 		}
 	}
 }
 
-void BfsAll()
+void ResetBfsRecord()
 {
-	int size = adjacent.size();
+	int size = static_cast<int>(adjacent.size());
+	discovered = vector<bool>(size, false);
+	bfsParent = vector<int>(size, -1);
+	bfsDistance = vector<int>(size, -1);
+}
+
+void ListBfsAll()
+{
+	int size = static_cast<int>(adjacent.size());
 
 	for (int i = 0; i < size; ++i)
 	{
 		if (discovered[i] == false)
 		{
-			BFS(i);
+			ListBFS(i);
+		}
+	}
+}
+
+void MatrixBfsAll()
+{
+	int size = static_cast<int>(adjacent.size());
+
+	for (int i = 0; i < size; ++i)
+	{
+		if (discovered[i] == false)
+		{
+			MatrixBFS(i);
 		}
 	}
 }
@@ -667,7 +754,7 @@ void BfsAll()
 
 /// 
 /// BFS의 시간 복잡도는... DFS와 같다.
-/// 인접 리스트 시의 조회 -> V마다 E개의 만큼 반복문을 도는 것은 변하지 않는다. 방문은 안 하더라도.
+/// 인접 리스트 시의 조회 -> 모든 정점과 모든 간선을 한 번씩 확인하므로 O(V+E)이다.
 /// 
 /// 인접 행렬 시의 조회 -> 이것도 V마다 V개의 for문을 도는 것도 변하지 않는다.
 /// 
@@ -677,12 +764,14 @@ void BfsAll()
 
 
 ///
-/// 다익스트라 = BFS + 코스트 / 큐 대신 우선순위 큐
+/// 다익스트라 = BFS와 탐색 모양은 비슷하지만, 거리 갱신과 최소 힙을 사용한다.
+/// 그리고 음수 가중치가 없는 그래프에서만 최단 거리를 보장한다.
 /// 
 
 /// <summary>
-/// 이 상태로는 안 돌아간다. 왜냐하면 priority queue는 대소비교 operator을 무조건 필요로 하기 때문이다.
-/// 그리고 뒤에 const 붙여야한다. 왜냐면 priority queue가 뒤에 const 붙은 operator 함수만 받아서...
+/// priority queue에는 원소의 우선순위를 판단할 비교 방법이 필요하다.
+/// 꼭 operator을 직접 만들 필요는 없지만, 여기서는 greater<VertexCost>를 쓰므로 operator >를 만들었다.
+/// 그리고 const 객체끼리도 비교할 수 있도록 operator 함수 뒤에 const를 붙인다.
 /// 
 /// cost는 알겠는데, vertex는 뭐에요?
 /// 원래 정점 넘버를 표기해주는게 필요하다. 근데 우리는 인접 리스트, 인접 행렬에 어차피 관계도 다 표기 되어있고
@@ -710,18 +799,19 @@ struct VertexCost
 	int vertex;
 };
 
-void Dijikstra(int here)
+void Dijkstra(int here)
 {
 	// std에 있다. 
 	priority_queue<VertexCost, vector<VertexCost>, greater<VertexCost>> pq;
+	int size = static_cast<int>(adjacent.size());
 
 	// '각 정점마다 얼마나 가중치가 낮게 갈 수 있느냐?' 의 베스트 케이스를 저장하는 곳이다.
 	// 이 값을 기준으로 '오, 너는 갱신될 만 하네' '안 돼, 가중치 더 낮춰서 와'를 판별 가능함.
 	// 가중치를 저장하는데, 가장 낮은 값을 비교하며 넣어야하므로, 가장 큰 값인(방해가 안 되는) 가장 큰 값을 넣는다.
 
-	vector<int> best(6, std::numeric_limits<int32_t>::max()); 
+	vector<int> best(size, std::numeric_limits<int>::max());
 
-	vector<int> parent(6, -1);
+	vector<int> parent(size, -1);
 
 	pq.push(VertexCost(0, here)); // 0번 코스트로 here 점이 등장할 것이다.
 	best[here] = 0;// here은 어차피 자기 자신이니 이동 코스트 0
@@ -729,7 +819,7 @@ void Dijikstra(int here)
 
 	while (pq.empty() == false)
 	{
-		// '인접한 놈' 이 아니고, '제일 좋은 후보'를 찾는다.
+		// '인접한 후보' 가 아니고, '제일 좋은 후보'를 찾는다.
 		// 이게 어떻게 돼요? 라고 물을 수도 있는데. 지금 하는 건 '내가 인접하면서 가보는 것' 이 아니라,
 		// '각 루트마다 어떻
 		VertexCost v = pq.top();
@@ -752,7 +842,7 @@ void Dijikstra(int here)
 
 		cout << "Visited!" << here << '\n';
 
-		for (int there = 0; there < 6; ++there)
+		for (int there = 0; there < size; ++there)
 		{
 			// 연결 안 됐으면 스킵
 			if (adjacent[here][there] == -1)
@@ -763,7 +853,7 @@ void Dijikstra(int here)
 
 			// 지금 구한 건 최선이 아니다. 라는 뜻인데. 이게 종료 조건 역할(visited, discovered)도 함.
 			// 만약 내가 1 -> 2 로 가서 값이 늘었는데, 2 -> 1 로 다시 되돌아가려 하면, 기존 값보다 무조건 합산된 가중치가 높을 거임.
-			// 즉, 절대 되돌아갈 일은 없다는 것.
+			// 가중치가 음수가 없다면, 되돌아가는 경로로 기존 최솟값을 더 낮출 수는 없다는 것.
 			// 종료 조건이 BFS나 DFS와는 다름. 다른 노드에 들러졌다고 안 들르는 건 아님.
 			// 단, 그 녀석이 '최솟값이 될 가능성이 사라졌을 때, 그 루트의 전진은 중지됨' 이 올바름.
 			// 어떤 한 best에서 막혔다면, 그 녀석은 다른 곳에서도 best가 절대 될 수 없다.
@@ -787,26 +877,64 @@ void Dijikstra(int here)
 			// 그리고 살아남았다면 이 녀석이 최소치의 희망이 있는 녀석이므로, 이 녀석을 push 하는 것.
 		}
 	}
+
+	cout << "Shortest cost from 0-----\n";
+	for (int vertex = 0; vertex < size; ++vertex)
+	{
+		cout << "Vertex " << vertex
+			<< " / Cost " << best[vertex]
+			<< " / Parent " << parent[vertex] << '\n';
+	}
+}
+
+void RunAdjacencyListExample()
+{
+	CreateAdjacencyListGraph();
+
+	cout << "Adjacency List / Recursive DFS-----\n";
+	visited = vector<bool>(adjacent.size(), false);
+	ListDfsAll();
+
+	cout << "Adjacency List / Stack DFS-----\n";
+	visited = vector<bool>(adjacent.size(), false);
+	ListStackDfsAll();
+
+	cout << "Adjacency List / BFS-----\n";
+	ResetBfsRecord();
+	ListBfsAll();
+}
+
+void RunAdjacencyMatrixExample()
+{
+	CreateAdjacencyMatrixGraph();
+
+	cout << "Adjacency Matrix / Recursive DFS-----\n";
+	visited = vector<bool>(adjacent.size(), false);
+	MatrixDfsAll();
+
+	cout << "Adjacency Matrix / Stack DFS-----\n";
+	visited = vector<bool>(adjacent.size(), false);
+	MatrixStackDfsAll();
+
+	cout << "Adjacency Matrix / BFS-----\n";
+	ResetBfsRecord();
+	MatrixBfsAll();
+}
+
+void RunDijkstraExample()
+{
+	CreateDijkstraGraph();
+
+	cout << "Dijkstra / Weighted Adjacency Matrix-----\n";
+	Dijkstra(0);
 }
 
 
 int main()
 {
-	CreateGraph();
-
-	cout << "DFS-----\n";
-	visited = vector<bool>(6, false);
-	//StackDfs(0);
-	//DFS(0);
-	DfsAll();
-
-	cout << "BFS-----\n";
-	discovered = vector<bool>(6, false);
-	//BFS(0);
-	BfsAll();
-
-	cout << "Dijikstra-----\n";
-	Dijikstra(0);
+	//RunAdjacencyListExample();
+	//RunAdjacencyMatrixExample();
+	RunDijkstraExample();
 }
 
 ///
