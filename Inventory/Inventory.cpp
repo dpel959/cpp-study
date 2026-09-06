@@ -8,94 +8,83 @@ Inventory::Inventory()
 	: _items{}, _itemCount(0)
 {
 	for (int i = 0; i < MAX_SLOT; ++i)
+	{
 		emptyIdxStack.push(i);
+		occupiedPosition[i] = -1;
+		generations[i] = 1;
+	}
 }
 
-Inventory::~Inventory()
-{
-	for (int idx : occupiedIdxVec)
-		delete _items[idx];
-}
+Inventory::~Inventory() = default;
 
-bool Inventory::AddItem(Item* item)
+std::optional<ItemHandle> Inventory::AddItem(std::unique_ptr<Item> item)
 {
 	if (item == nullptr)
-		return false;
+		return std::nullopt;
 	int idx = FindEmptySlot();
 	if (idx < 0)
-		return false;
-	_items[idx] = item;
-	++_itemCount;
+		return std::nullopt;
 	occupiedIdxVec.push_back(idx);
+	occupiedPosition[idx] = static_cast<int>(occupiedIdxVec.size()) - 1;
+	_items[idx] = std::move(item);
+	++_itemCount;
 	emptyIdxStack.pop();
 	std::cout << "Add Item :\n";
-	item->PrintInfo();
-	return true;
+	_items[idx]->PrintInfo();
+	return ItemHandle{ idx, generations[idx] };
 }
 
-bool Inventory::RemoveItem(Item* item)
+bool Inventory::RemoveItem(ItemHandle handle)
 {
-	if (item == nullptr)
+	if (!IsValidHandle(handle))
 		return false;
 
-	int itemIdx = FindItemSlot(item);
-
-	if (itemIdx < 0)
-		return false;
+	const int itemIdx = handle.slotIndex;
 
 	std::cout << "Removed item :\n";
-	item->PrintInfo();
+	_items[itemIdx]->PrintInfo();
 
-	delete _items[itemIdx];
+	_items[itemIdx].reset();
 	--_itemCount;
-	int occupiedIdxVecSize = occupiedIdxVec.size();
-	for (int i = 0; i < occupiedIdxVecSize; ++i)
-	{
-		if (occupiedIdxVec[i] == itemIdx)
-		{
-			occupiedIdxVec.erase(occupiedIdxVec.begin() + i);
-			break;
-		}
-	}
+
+	RemoveOccupiedIndex(itemIdx);
 	emptyIdxStack.push(itemIdx);
-	_items[itemIdx] = nullptr;
+	AdvanceGeneration(itemIdx);
 
 	return true;
 }
 
-bool Inventory::RemoveItem(std::vector<int>& vec)
+bool Inventory::RemoveItems(const std::vector<ItemHandle>& handles)
 {
-	if (vec.empty())
+	if (handles.empty())
 		return false;
 
-	bool occupiedTable[MAX_SLOT] = {};
+	int removedCount = 0;
 
 	std::cout << "Removed Items:\n";
 
-	for (int idx : vec)
+	for (ItemHandle handle : handles)
 	{
-		if (idx < 0 || idx >= MAX_SLOT || _items[idx] == nullptr)
+		if (!IsValidHandle(handle))
 			continue;
 
+		const int idx = handle.slotIndex;
+
 		_items[idx]->PrintInfo();
-		delete _items[idx];
-		_items[idx] = nullptr;
+		_items[idx].reset();
 
 		emptyIdxStack.push(idx);
+		RemoveOccupiedIndex(idx);
+		AdvanceGeneration(idx);
 
 		--_itemCount;
+		++removedCount;
 	}
 
-	for (int idx : vec)
-		occupiedTable[idx] = true;
-
-	occupiedIdxVec.erase(std::remove_if(occupiedIdxVec.begin(), occupiedIdxVec.end(), [&occupiedTable](int n) { return occupiedTable[n]; })
-		, occupiedIdxVec.end());
-
-	return true;
+	return removedCount > 0;
 }
 
-int Inventory::GetItemCount()
+int Inventory::GetItemCount() const
 {
 	return _itemCount;
 }
@@ -105,23 +94,39 @@ bool Inventory::RandomRemoveItem()
 	if (_itemCount <= 0)
 		return false;
 
-	std::vector<int> selectedVec;
-	Random::GetSample(occupiedIdxVec, _itemCount / 5, selectedVec);
+	const int removeCount = std::max(1, _itemCount / 5); // 적어도 하나는 드랍하도록
 
-	return RemoveItem(selectedVec);
+	std::vector<int> selectedIndices;
+	Random::GetSample(occupiedIdxVec, removeCount, selectedIndices);
+
+	std::vector<ItemHandle> selectedHandles;
+	selectedHandles.reserve(selectedIndices.size());
+	for (int idx : selectedIndices)
+		selectedHandles.push_back(ItemHandle{ idx, generations[idx] });
+
+	return RemoveItems(selectedHandles);
 }
 
-Item* Inventory::FindItemByIndex(int idx)
+Item* Inventory::FindItem(ItemHandle handle)
 {
-	if (idx < 0 || idx >= MAX_SLOT)
+	if (!IsValidHandle(handle))
 		return nullptr;
 
-	return _items[idx];
+	return _items[handle.slotIndex].get();
+}
+
+const Item* Inventory::FindItem(ItemHandle handle) const
+{
+	if (!IsValidHandle(handle))
+		return nullptr;
+
+	return _items[handle.slotIndex].get();
 }
 
 
 // *************************
-// 여기도 포인터로 하지 않고 객체로 한다. 포인터로 하면 컴파일러가 보장해주는 멀티 스레드 안전을 잃을 수 있다.
+// 함수 내부 static 객체의 초기화는 C++11부터 멀티 스레드 환경에서도 한 번만 수행된다.
+// 단, AddItem과 RemoveItem 같은 Inventory의 멤버 함수 자체가 스레드 안전한 것은 아니다.
 // *************************
 
 Inventory& Inventory::Getinstance()
@@ -139,10 +144,32 @@ int Inventory::FindEmptySlot()
 	return num;
 }
 
-int Inventory::FindItemSlot(Item* item)
+void Inventory::RemoveOccupiedIndex(int itemIdx)
 {
-	for (int i = 0; i < MAX_SLOT; ++i)
-		if (_items[i] == item)
-			return i;
-	return -1;
+	const int removePosition = occupiedPosition[itemIdx];
+	if (removePosition < 0)
+		return;
+
+	const int lastSlotIndex = occupiedIdxVec.back();
+	occupiedIdxVec[removePosition] = lastSlotIndex;
+	occupiedPosition[lastSlotIndex] = removePosition;
+
+	occupiedIdxVec.pop_back();
+	occupiedPosition[itemIdx] = -1;
+}
+
+bool Inventory::IsValidHandle(ItemHandle handle) const
+{
+	if (handle.slotIndex < 0 || handle.slotIndex >= MAX_SLOT)
+		return false;
+
+	return _items[handle.slotIndex] != nullptr
+		&& generations[handle.slotIndex] == handle.generation;
+}
+
+void Inventory::AdvanceGeneration(int itemIdx)
+{
+	++generations[itemIdx];
+	if (generations[itemIdx] == 0)
+		++generations[itemIdx];
 }

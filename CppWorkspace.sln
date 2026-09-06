@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36616.10
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ItemDrop", "Inventory\Inventory.vcxproj", "{F06BF683-8A09-457A-9C86-894CA0C66348}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InventoryCore", "Inventory\InventoryCore.vcxproj", "{F06BF683-8A09-457A-9C86-894CA0C66348}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InventoryDemo", "InventoryDemo\InventoryDemo.vcxproj", "{C4DB0A82-9789-4E6F-8190-B7B43AE5214F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Maze", "Maze\Maze.vcxproj", "{74FB8C55-85BA-4194-8A5E-47A94C2ACA28}"
 EndProject
@@ -12,6 +14,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "STL", "STL\STL.vcxproj", "{4539EA40-B533-400C-9231-BDA9F33F4B1B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WindowsAPI", "WindowsAPI\WindowsAPI.vcxproj", "{DA6314EB-995A-45E4-B5FF-55A7980F1B44}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InventoryTests", "InventoryTests\InventoryTests.vcxproj", "{9B36E378-8187-407A-9FC0-0B1AC78CD048}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InventoryBenchmark", "InventoryBenchmark\InventoryBenchmark.vcxproj", "{00CA82BA-96EB-4F22-8323-A666DB589070}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +35,14 @@ Global
 		{F06BF683-8A09-457A-9C86-894CA0C66348}.Release|x64.Build.0 = Release|x64
 		{F06BF683-8A09-457A-9C86-894CA0C66348}.Release|x86.ActiveCfg = Release|Win32
 		{F06BF683-8A09-457A-9C86-894CA0C66348}.Release|x86.Build.0 = Release|Win32
+		{C4DB0A82-9789-4E6F-8190-B7B43AE5214F}.Debug|x64.ActiveCfg = Debug|x64
+		{C4DB0A82-9789-4E6F-8190-B7B43AE5214F}.Debug|x64.Build.0 = Debug|x64
+		{C4DB0A82-9789-4E6F-8190-B7B43AE5214F}.Debug|x86.ActiveCfg = Debug|Win32
+		{C4DB0A82-9789-4E6F-8190-B7B43AE5214F}.Debug|x86.Build.0 = Debug|Win32
+		{C4DB0A82-9789-4E6F-8190-B7B43AE5214F}.Release|x64.ActiveCfg = Release|x64
+		{C4DB0A82-9789-4E6F-8190-B7B43AE5214F}.Release|x64.Build.0 = Release|x64
+		{C4DB0A82-9789-4E6F-8190-B7B43AE5214F}.Release|x86.ActiveCfg = Release|Win32
+		{C4DB0A82-9789-4E6F-8190-B7B43AE5214F}.Release|x86.Build.0 = Release|Win32
 		{74FB8C55-85BA-4194-8A5E-47A94C2ACA28}.Debug|x64.ActiveCfg = Debug|x64
 		{74FB8C55-85BA-4194-8A5E-47A94C2ACA28}.Debug|x64.Build.0 = Debug|x64
 		{74FB8C55-85BA-4194-8A5E-47A94C2ACA28}.Debug|x86.ActiveCfg = Debug|Win32
@@ -61,6 +75,22 @@ Global
 		{DA6314EB-995A-45E4-B5FF-55A7980F1B44}.Release|x64.Build.0 = Release|x64
 		{DA6314EB-995A-45E4-B5FF-55A7980F1B44}.Release|x86.ActiveCfg = Release|Win32
 		{DA6314EB-995A-45E4-B5FF-55A7980F1B44}.Release|x86.Build.0 = Release|Win32
+		{9B36E378-8187-407A-9FC0-0B1AC78CD048}.Debug|x64.ActiveCfg = Debug|x64
+		{9B36E378-8187-407A-9FC0-0B1AC78CD048}.Debug|x64.Build.0 = Debug|x64
+		{9B36E378-8187-407A-9FC0-0B1AC78CD048}.Debug|x86.ActiveCfg = Debug|Win32
+		{9B36E378-8187-407A-9FC0-0B1AC78CD048}.Debug|x86.Build.0 = Debug|Win32
+		{9B36E378-8187-407A-9FC0-0B1AC78CD048}.Release|x64.ActiveCfg = Release|x64
+		{9B36E378-8187-407A-9FC0-0B1AC78CD048}.Release|x64.Build.0 = Release|x64
+		{9B36E378-8187-407A-9FC0-0B1AC78CD048}.Release|x86.ActiveCfg = Release|Win32
+		{9B36E378-8187-407A-9FC0-0B1AC78CD048}.Release|x86.Build.0 = Release|Win32
+		{00CA82BA-96EB-4F22-8323-A666DB589070}.Debug|x64.ActiveCfg = Debug|x64
+		{00CA82BA-96EB-4F22-8323-A666DB589070}.Debug|x64.Build.0 = Debug|x64
+		{00CA82BA-96EB-4F22-8323-A666DB589070}.Debug|x86.ActiveCfg = Debug|Win32
+		{00CA82BA-96EB-4F22-8323-A666DB589070}.Debug|x86.Build.0 = Debug|Win32
+		{00CA82BA-96EB-4F22-8323-A666DB589070}.Release|x64.ActiveCfg = Release|x64
+		{00CA82BA-96EB-4F22-8323-A666DB589070}.Release|x64.Build.0 = Release|x64
+		{00CA82BA-96EB-4F22-8323-A666DB589070}.Release|x86.ActiveCfg = Release|Win32
+		{00CA82BA-96EB-4F22-8323-A666DB589070}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

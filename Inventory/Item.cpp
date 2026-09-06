@@ -11,9 +11,9 @@ Item::Item(EItemType itemType)
 	: _itemType(itemType)
 {
 	int randNum = Random::GetRandomInt(1, 100);
-	if (randNum < 50)
+	if (randNum <= 50)
 		_rarity = EItemRarity::Normal;
-	else if (randNum < 80)
+	else if (randNum <= 80)
 		_rarity = EItemRarity::Rare;
 	else
 		_rarity = EItemRarity::Unique;

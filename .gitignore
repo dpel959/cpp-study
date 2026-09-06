@@ -12,3 +12,6 @@ ipch/
 *.db
 *.opendb
 *.sdf
+*.obj
+*.exe
+*.pdb

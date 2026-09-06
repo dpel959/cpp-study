@@ -1,20 +1,19 @@
-﻿#include <iostream>
-#include "Random.h"
-#include "item.h"
-#include "Inventory.h"
+#include <iostream>
+#include <memory>
 
-Item* DropItem();
+#include "Inventory.h"
+#include "Item.h"
+#include "Random.h"
+
+std::unique_ptr<Item> DropItem();
 
 int main()
 {
     for (int i = 0; i < 100; ++i)
     {
-        Item* item = DropItem();
-
-        if (!Inventory::Getinstance().AddItem(item))
+        if (!Inventory::Getinstance().AddItem(DropItem()).has_value())
         {
             std::cout << "Failed add item to Inventory\n";
-            delete item;
         }
     }
 
@@ -29,19 +28,17 @@ int main()
     }
 }
 
-Item* DropItem()
+std::unique_ptr<Item> DropItem()
 {
     int randNum = Random::GetRandomInt(1, 2);
     if (randNum == 1)
     {
-        Weapon* weapon = new Weapon();
+        auto weapon = std::make_unique<Weapon>();
         weapon->SetDamage(Random::GetRandomInt(1, 100));
         return weapon;
     }
-    else
-    {
-        Armor* armor = new Armor();
-        armor->SetDefence(Random::GetRandomInt(1, 100));
-        return armor;
-    }
+
+    auto armor = std::make_unique<Armor>();
+    armor->SetDefence(Random::GetRandomInt(1, 100));
+    return armor;
 }
