@@ -83,7 +83,7 @@ Node* BinarySearchTree::Search(Node* node, int key)
 /// 그래서 Search와는 다르게 node 자체를 보는 것이 아니라 node->left를 보는 것이 필요한데, 그러면 node와 node->left를 계속 동시에 봐야한다.
 /// 사실 매번 볼 것은 node -> left 밖에 없는데. 그래서 이번엔 재귀의 편의성을 포기할 만 하다는 것.
 /// 
-/// 또, 보통 한 줄기로만 쭉 파고드는 건 while, 전체를 뒤지는 건 재귀가 더 코드를 짜기가 편하다고한다.
+/// 또, 보통 한 줄기로만 쭉 파고드는 건 while, 전체를 뒤지는 건 재귀가 더 코드를 짜기가 편하다.
 /// 전체를 뒤지려면 보통 stack이나 queue의 도움을 받아야하니까.
 /// <- 이거 좀 중요하니까 이 감각을 잊지 말자.
 /// 
@@ -92,8 +92,8 @@ Node* BinarySearchTree::Search(Node* node, int key)
 
 Node* BinarySearchTree::Min(Node* node)
 {
-	Node* current = node; // RVO가 동작하도록 여기서부터.
-	// node == nullptr에서 node나 nullptr을 리턴하면 뭘 리턴해야하지?? 하고 컴파일러가 RVO를 포기한다.
+	// 여기서는 Node 객체가 아니라 Node* 주소값을 복사해서 반환하므로 RVO와는 관계없다.
+	Node* current = node;
 
 	if (current == nullptr)
 	{
@@ -128,7 +128,7 @@ Node* BinarySearchTree::Max(Node* node)
 /// 
 /// Node 바로 다음의 값을 찾아라!
 /// 이것도 특정 없이 끝까지 파고드는 것이니 자기 자신이 끝까지 파고 들수는 없다. 
-/// 그리고 처음에 딱 한번 오른쪽에 자식이 있는지 없는지 판별하는 것도 필요하다.while 써주자.
+/// 그리고 처음에 딱 한번 오른쪽에 자식이 있는지 없는지 판별하는 것도 필요하다. while 써주자.
 /// 
 
 Node* BinarySearchTree::Next(Node* node)
@@ -174,8 +174,7 @@ void BinarySearchTree::Insert(int key)
 		return;
 	}
 
-	// 이런 코드를 생각을 해봤었는데, 그냥 parent 하나 더 이용하는 게 분기문을 훨씬 줄일 수 있어
-	// 그쪽이 나은 것 같다.
+	// 이런 코드를 생각을 해봤었는데, 그냥 parent 하나 더 이용하는 게 분기문을 훨씬 줄일 수 있어 그쪽이 나은 것 같다.
 	
 	//Node* current = _root;
 
@@ -225,7 +224,7 @@ void BinarySearchTree::Insert(int key)
 
 	// 그리고 '어디서 왔는지'는 parent가 저장해주지 않기에. 그걸 다시 판별한다.
 	// 동작만 보면 위 코드보다 굳이 이걸 한번 더 하는 것이지만, while문에서 도는 if문을 크게 줄일 수 있다.
-	// 아니, 분기 예측 있잖아요! 라고 하는데, 이진 트리가 진짜 '지그재그'가 잘 일어날 놈이라서. 지그재그가 분기 예측에 최악이다.
+	// 아니, 분기 예측 있잖아요! 라고 하는데, 이진 트리가 진짜 '지그재그'가 잘 일어날 녀석이라서. 지그재그가 분기 예측에 최악이다.
 
 	if (parent->key < key)
 	{

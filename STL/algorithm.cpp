@@ -6,6 +6,7 @@
 #include<unordered_map>
 #include<algorithm>
 #include<string>
+#include<cstring>
 using std::cout, std::vector, std::list, std::map, std::unordered_map, std::priority_queue;
 
 #pragma region StdAlgorithms
@@ -75,9 +76,9 @@ int main()
 	// none_of = 모든 데이터가 Predicate를 만족하지 않는가?
 
 	{
-		cout << "모든 원소가 홀수인가? " << std::boolalpha << all_of(v.begin(), v.end(), IsOdd()) << '\n';
-		cout << "원소 중 홀수가 하나라도 있는가? " << std::boolalpha << any_of(v.begin(), v.end(), IsOdd()) << '\n';
-		cout << "모든 원소가 홀수가 아닌가? " << std::boolalpha << none_of(v.begin(), v.end(), IsOdd()) << '\n';
+		cout << "모든 원소가 홀수인가? " << std::boolalpha << std::all_of(v.begin(), v.end(), IsOdd()) << '\n';
+		cout << "원소 중 홀수가 하나라도 있는가? " << std::boolalpha << std::any_of(v.begin(), v.end(), IsOdd()) << '\n';
+		cout << "모든 원소가 홀수가 아닌가? " << std::boolalpha << std::none_of(v.begin(), v.end(), IsOdd()) << '\n';
 	}
 
 	// 원소 전체 대상으로 무언가를 할때. for_each
@@ -94,7 +95,7 @@ int main()
 	// 위와 같은 식의 2개의 컨테이너에 대해 연산을 하는 Binary Function도 가능하다.
 	// 단, v2의 크기는 v1의 크기보다 커야함. (3번째 파라미터에 넣는 건 시작점이라 간주함.) 
 	// + dest 컨테이너는 충분히 크지 않으면 뒤에 꽂아넣어주는 std::back_inserter을 사용할 것.
-	// (그냥 capacity 확인해주고 부족하면 넓히고 v.end() 반환해주는 놈이라 보면 된다.)
+	// (값이 대입될 때 컨테이너의 push_back을 대신 호출해주는 출력 iterator라고 보면 된다.)
 
 	// remove, remove_if 정확히는 동작이, 정한 값, 혹은 Predicate를 만족하는 값들을 만족하지 않는 뒤의 값들로 덮어 씌워버리는 것.
 	// 즉, 앞의 지울 값들을 '뒤의 지우지 않을 값들(유효할 값들)'로 덮어 씌우는 것이다.
@@ -118,8 +119,8 @@ int main()
 	// 하지만, remove는 투 포인터 동작으로 O(N)을 한번 슥 하고, 그 뒤 뒤의 모든 것을 지워주면 되므로, O(N)의 작업 2번으로 모든 삭제가 끝난다.
 
 	// std::unique도 비슷하게 동작해서, unique-erase를 해주기도 한다.
-	// std::unique는 remove와 비슷하게 투 포인터로 동작하는 '인접한 중복된 것을 없애주는' 함수라서, 
-	// std::unique를 사용하기 전, sort로 정렬이 필요하다.
+	// std::unique는 remove와 비슷하게 투 포인터로 동작하는 '인접한 중복된 것을 없애주는' 함수라서,
+	// 모든 중복을 없애는 목적이라면 같은 값끼리 붙도록 먼저 sort가 필요하다. 인접 중복만 없앨 거면 정렬은 필수가 아니다.
 }
 #endif
 #pragma endregion
@@ -127,13 +128,16 @@ int main()
 #pragma region Sort
 #if 0
 /// 
-/// BubbleSort 한번 돌때마다 무조~건 제일 큰게 맨 뒤로감. 그걸 n - 1 번만큼 반복하는 거임.
+/// BubbleSort 한번 돌때마다 무조건 제일 큰게 맨 뒤로 감. 그걸 n - 1 번만큼 반복하는 것.
 /// 그래서 O(N^2)임. 아주 최악의 Sort
 /// 
 
 void BubbleSort(vector<int>& v)
 {
-	int end = v.size() - 1;
+	if (v.empty())
+		return;
+
+	int end = static_cast<int>(v.size()) - 1;
 
 	for (int i = 0; i < end; ++i)
 	{
@@ -156,7 +160,7 @@ void BubbleSort(vector<int>& v)
 
 void SelectionSort(vector<int>& v)
 {
-	int end = v.size();
+	int end = static_cast<int>(v.size());
 
 	for (int i = 0; i < end - 1; ++i)
 	{
@@ -178,8 +182,8 @@ void SelectionSort(vector<int>& v)
 
 /// 
 /// 힙 소트 = 우선순위 큐 힙 트리 말하는 거 맞다.
-/// 아니, 우선순위 큐는 부모가 자식보다 큰 것만 보장되지 BST가 아니잖아요
-/// 맞아. 그래서 힙 트리 완성한 다음에 그 윗부분만 다시 쏙쏙 빼먹어
+/// 아니, 우선순위 큐는 부모가 자식보다 큰 것만 보장되지 BST가 아니잖아요.
+/// 맞다. 그래서 힙 트리 완성한 다음에 그 윗부분만 다시 쏙쏙 빼먹는다.
 /// 
 /// 아무튼 아주 좋은 방법이다. 힙 트리 자체가 높이 logN을 무조건 보장하기 때문에...
 /// 
@@ -188,13 +192,12 @@ void SelectionSort(vector<int>& v)
 /// 우선순위 큐는 자식을 이동할 때 2*i+1, 2*i+2, 부모로 이동할때 (i - 1)/2 를 한다.
 /// 그래. '바로 옆'을 방문하지 않아 캐싱의 수혜를 띄엄띄엄 받을 수밖에 없다.
 /// 
-/// 2. NlogN이긴 한데, 그 NlogN의 수가 좀 많다.
-/// 삽입을 할때 NlogN, 그리고 삭제를 할때는.. 2NlogN이다.
-/// 왜냐면, 삭제를 하면 맨 뒤의 값을 맨 위로 올리고, 그것을 '양 옆'으로 비교하기 때문이다.
-/// 그래서, 결국 3NlogN이 걸리는데, 퀵 소트 같은 경우는 원소를 하나 만날때마다 '피벗 보다 작은가?'라는 한번만 비교한다.
-/// 퀵 소트의 평균 비교 횟수는 1.39NlogN이다.
+/// 2. NlogN이긴 한데, 원소를 내릴 때 양쪽 자식을 비교해야 해서 실제 비교 횟수가 많은 편이다.
+/// 정확한 비교 횟수는 구현과 데이터에 따라 달라지므로 무조건 3NlogN으로 고정되는 것은 아니다.
+/// 퀵 소트도 피벗 선택과 데이터에 따라 비교 횟수가 달라지지만, 평균적으로 비교 횟수가 적은 편이다.
 /// 
-/// 즉, 힙 소트는 무조건 NlogN, 그리고 메모리는 O(1)을 보장하는 아주 좋은 알고리즘이다.
+/// 즉, 힙 소트는 무조건 NlogN을 보장하는 아주 좋은 알고리즘이다.
+/// 반복문 Heapify라면 추가 메모리는 O(1), 지금처럼 재귀 Heapify라면 호출 스택 O(logN)을 사용한다.
 /// (우리가 구현한 것과 다르게, 원래는 기존 벡터를 힙 트리로 만든다. 원래 힙 트리는 벡터로 구현 가능하니까.
 /// 이때, 벡터를 힙 트리로 만드는데, 벡터는 다 구성되어있고, 트리가 확정되어있다. 
 /// 그러므로 맨 밑의 부모 노드들에서부터 '양 쪽 자식 중 누가 나보다 큰 지 보고, 큰 쪽을 올리고 내가 내려간다.'는 방식을 사용.
@@ -206,13 +209,13 @@ void SelectionSort(vector<int>& v)
 /// Merge는 leftIdx를 우선적으로 넣어주므로, StableSort이다.
 /// 
 
-// 밑이 날먹 힙 소트
+// 밑이 힙 소트인데, priority queue를 이용해 쉽게 구현한 힙 소트
 #if 0
 void HeapSort(vector<int>& v)
 {
 	priority_queue<int, vector<int>, std::greater<int>> pq;
 
-	// 힙 트리는 삽입은 O(logN)이고 빼는 건 O(1)이다.
+	// 힙 트리는 삽입은 O(logN), top 확인은 O(1), pop으로 삭제하는 것은 O(logN)이다.
 	// 그럼 이것의 시간 복잡도는?
 	// 삽입이 logN, 그리고 그걸 v의 원소 만큼 반복하니 삽입은 O(NlogN)이다.
 
@@ -262,7 +265,7 @@ void Heapify(vector<int>& v, int parentIdx, int size)
 
 void HeapSort(vector<int>& v)
 {
-	int vectorSize = v.size();
+	int vectorSize = static_cast<int>(v.size());
 
 	// 맨 뒤 부모부터 시작 해서 맨 위 부모까지 Heapify
 	for (int parentIdx = (vectorSize - 2) / 2; parentIdx >= 0; --parentIdx)
@@ -287,7 +290,7 @@ void HeapSort(vector<int>& v)
 /// 말은 멋진데, 그냥 큰 문제를 작은 문제로 나누고 작은 문제를 각자 해결 한 후 다시 취지에 맞게 합치겠다는거다.
 /// 왜냐면, 그냥 작은 문제가 더 쉬운 방법으로 풀 수 있으니까..
 /// 그리고, 분할한 문제는 다른 분할한 문제와 독립적이다.
-/// 그러므로 병렬적으로 다른 놈이 문제를 풀고 결과 값을 줘도 OK 라는 것
+/// 그러므로 병렬적으로 다른 나눈 부분이 문제를 풀고 결과 값을 줘도 OK 라는 것
 /// 
 
 /// [3][K][7][2][J][4][8][9] < 8
@@ -312,15 +315,13 @@ void HeapSort(vector<int>& v)
 /// 그냥 N짜리 벡터 하나 만들고 계속 굴리면 될텐데.
 /// Q. 어, 그럼 MergeResult에 static 벡터 하나 만들면 어때요?
 /// A. 1. 그거 멀티 스레드로 다른 스레드에서 동시 접속하면?
-/// 2. MergeSort를 안 해도 쓸데 없이 메모리에 계속 남아있는데?
+/// 2. 한 번도 호출하지 않으면 생성되지 않지만, 한 번 호출된 뒤에는 메모리에 계속 남아있는데?
 ///  
 /// Q. 아니 그러면 어쩌라고요
 /// A. MergeSort단부터 N크기의 vector을 만들어 끼워 넣어준다.
 /// 
 /// Q. 아니, MergeSort는 재귀함수잖아요? 그거마다 N크기 벡터 만들면 오히려 낭비죠?
-/// A. 그래서 재귀 부분을 따로 나눠줄거다.
-/// 
-/// Q. 아...ㅅ1팔...
+/// A. 그래서 재귀 부분을 따로 나눠준다.
 /// 
 
 // 이게 원본
@@ -384,12 +385,12 @@ void MergeSort(vector<int>& v, int left, int right)
 		return;
 	}
 
-	// 이얍 일단 분할을 존나 해
+	// 일단 분할을 계속 한다.
 
 	// 잘 보면 홀수 개 일때는 우측이 하나 덜 가져간다
 	// 짝수 개일때는 mid가 .5라서 잘림. 좌측이 하나 덜 가져가게 됨. 그래서 갯수가 같아짐
 
-	int mid = (left + right) / 2;
+	int mid = left + (right - left) / 2;
 
 	MergeSort(v, left, mid); 
 	MergeSort(v, mid + 1, right); 
@@ -449,7 +450,7 @@ void MergeSortInternal(vector<int>& v, vector<int>& temp, int left, int right)
 		return;
 	}
 
-	int mid = (left + right) / 2;
+	int mid = left + (right - left) / 2;
 
 	MergeSortInternal(v, temp, left, mid);
 	MergeSortInternal(v, temp, mid + 1, right);
@@ -466,11 +467,11 @@ void MergeSort(vector<int>& v)
 
 	vector<int>temp(v.size());
 
-	MergeSortInternal(v, temp, 0, v.size() - 1);
+	MergeSortInternal(v, temp, 0, static_cast<int>(v.size()) - 1);
 }
 
 /// 
-/// 그래서, 이 MergeSort 놈의 시간 복잡도는 어떻게 분석할까.
+/// 그래서, 이 MergeSort의 시간 복잡도는 어떻게 분석할까.
 /// 나누는 거? logN. 반씩 나누니까.
 /// 그 후 넣는 건 두 벡터를 보고 비교하여, 원소 갯수만큼 정직하게 해야한다.
 /// 근데 이게 원래 봤던 것도 또 봐야함. 내가 1, 2번에 대해 정렬했더라도 1~2, 3~4번에 대해서는 어떨지 모르니까.
@@ -487,7 +488,8 @@ void MergeSort(vector<int>& v)
 
 /// 
 /// QuickSort. 평균 O(NlogN). 메모리 사용 최선의 경우 O(logN) 최악의 경우 O(N). (재귀 호출의 스택 사용.)
-/// '평균적으로는' 가장 빠르다. 하지만 MergeSort, HeapSort와 다르게 언제나 O(NlogN)을 보장하지 않는다. 최악의 경우 일렬로 줄지어져 O(N^2).
+/// 평균적으로 빠른 편이다. 하지만 데이터와 구현에 따라 무조건 가장 빠른 것은 아니다.
+/// MergeSort, HeapSort와 다르게 언제나 O(NlogN)을 보장하지 않는다. 최악의 경우 일렬로 줄지어져 O(N^2).
 /// 
 /// 알고리즘 적으로는, MergeSort는 '나누고 정렬한다'였지만, QuickSort는 '정렬하면서 나눈다'로 보면 된다.
 /// 그래서, MergeSort의 다 나누고 -> 합치는 2 단계가 아닌 바로 1단계만 거치면 되어서 굉장히 빠른것.
@@ -571,10 +573,10 @@ int main()
 	//SelectionSort(v);
 	//HeapSort(v);
 	MergeSort(v);
-	//QuickSort(v, 0, v.size() - 1);
+	//QuickSort(v, 0, static_cast<int>(v.size()) - 1);
 
-	// 이렇게 해도 인라이닝을 해줘서 괜찮다. 그리고 오히려 STL의 함수들은 SIMD 유닛에 최적화되어 굴러가도록 되어있어서, 오히려 쓰면 좋다. 
-	// 물론 이 경우는 cout을 쓰는 I/O 같은 경우이므로 불가능 하지만, 간단한 분기문이나 사칙연산 정도라면 SIMD 유닛에서 처리가 가능하다
+	// 이렇게 해도 컴파일러가 조건이 맞으면 인라이닝해줄 수 있다.
+	// 간단한 분기문이나 사칙연산은 컴파일러가 자동으로 SIMD 최적화할 수도 있지만, std::for_each를 썼다고 SIMD가 보장되는 것은 아니다.
 	std::for_each(v.begin(), v.end(), [] (int elem) {cout << elem << ' '; });
 	cout << '\n';
 }
