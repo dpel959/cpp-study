@@ -64,8 +64,3 @@ Visual Studio 2022에서 `Maze` 프로젝트를 시작 프로젝트로 선택해
 Maze\x64\Release\Maze.exe --benchmark Maze\benchmark\pathfinding_results.csv
 python Maze\benchmark\generate_chart.py
 ```
-
-## 현재 범위와 개선 방향
-
-- 같은 미로에서 각 알고리즘을 여러 번 실행하고 중앙값을 사용해 실행 시간의 외부 잡음 줄이기
-- 벽 모서리 사이의 대각선 통과를 허용하거나 막을 수 있도록 이동 규칙 분리
