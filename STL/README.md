@@ -101,7 +101,7 @@ C++17의 표준 라이브러리와 기본 알고리즘을 직접 사용하고 �
 | QuickSort | 피벗 선택과 중복값이 분할 결과에 미치는 영향 | [`algorithm.cpp`](algorithm.cpp) |
 | Binary Search Tree | 반복과 재귀의 선택, 후속 노드와 삭제 과정 | [`BinarySearchTree.cpp`](BinarySearchTree.cpp) |
 
-## 강의와의 차별화
+## 학습하며 바로잡은 내용
 
 - 빈 벡터에서 `size() - 1`을 먼저 계산해 큰 unsigned 값이 될 수 있던 조건 방어
 - `vector::erase` 후 무효화된 반복자를 증가시키거나 다음 원소를 건너뛰는 순회 방식 수정
