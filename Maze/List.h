@@ -89,8 +89,8 @@ public:
 
 	using iterator = ListIterator<T>;
 
-	iterator begin() { return _head; }
-	iterator end() { return _tail->next; } // 이거 주의해야한다.
+	iterator begin() { return iterator(_head); }
+	iterator end() { return iterator(nullptr); }
 
 	~List();
 

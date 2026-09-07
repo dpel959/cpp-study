@@ -26,8 +26,8 @@ public:
 		return _container.back();
 	}
 
-	bool empty() { return size() > 0; };
-	int size() { return _container.size(); };
+	bool empty() const { return size() == 0; };
+	int size() const { return _container.size(); };
 private:
 	Vector<T> _container;
 };

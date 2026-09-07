@@ -2,7 +2,9 @@
 #include "Vector.h"
 #include "Board.h"
 #include "Player.h"
+#include "PathfindingBenchmark.h"
 #include "Stack.h"
+#include <cstring>
 /// <summary>
 /// 주소값을 넣는데 값 타입 객체를 넣는 건 위험하다.
 /// 스코프에서 벗어나면 사라지기 때문에. 여기서는 아니다만 습관적으로 위험.
@@ -11,8 +13,16 @@
 /// 경험 삼아 쓰는 걸로.
 /// </summary>
 
-int main()
+int main(int argc, char* argv[])
 {
+	if (argc >= 2 && std::strcmp(argv[1], "--benchmark") == 0)
+	{
+		const char* outputPath = argc >= 3
+			? argv[2]
+			: "Maze/benchmark/pathfinding_results.csv";
+		return RunPathfindingBenchmark(outputPath);
+	}
+
 	Stack<int> st;
 	st.push(1);
 	st.push(2);
@@ -42,6 +52,7 @@ int main()
 		player->Update(deltaTick);
 
 		board->Render();
+		player->PrintPathfindingComparison();
 	}
 
 	delete board;

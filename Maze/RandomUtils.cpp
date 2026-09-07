@@ -13,6 +13,11 @@ namespace
 
 namespace Random
 {
+	void SetSeed(unsigned int seed)
+	{
+		gen.seed(seed);
+	}
+
 	int GetRandomInt(int start, int end)
 	{
 		std::uniform_int_distribution<int> dis(start, end);

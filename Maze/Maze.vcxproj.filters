@@ -19,6 +19,9 @@
     <ClCompile Include="Maze.cpp">
       <Filter>Maze</Filter>
     </ClCompile>
+	<ClCompile Include="PathfindingBenchmark.cpp">
+	  <Filter>Maze</Filter>
+	</ClCompile>
     <ClCompile Include="Vector.cpp">
       <Filter>DataStructure</Filter>
     </ClCompile>
@@ -75,6 +78,9 @@
     <ClInclude Include="RandomUtils.h">
       <Filter>Maze</Filter>
     </ClInclude>
+	<ClInclude Include="PathfindingBenchmark.h">
+	  <Filter>Maze</Filter>
+	</ClInclude>
     <ClInclude Include="Stack.h">
       <Filter>DataStructure</Filter>
     </ClInclude>
