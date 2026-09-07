@@ -10,6 +10,11 @@ Monster::Monster() : Object(ObjectType::Monster)
 
 Monster::~Monster()
 {
+	if (_lookPen != nullptr)
+	{
+		::DeleteObject(_lookPen);
+		_lookPen = nullptr;
+	}
 }
 
 void Monster::Init()
@@ -22,6 +27,8 @@ void Monster::Init()
 
 	_lookDir = _lookPos - _pos;
 	_lookDir.Normalize();
+
+	_lookPen = ::CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
 }
 
 void Monster::Update()
@@ -34,8 +41,7 @@ void Monster::Render(HDC hdc)
 	Utils::DrawCircle(hdc, _pos, 100);
 
 	// frontDir
-	static HPEN pen = ::CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
-	HPEN oldpen = static_cast<HPEN>(::SelectObject(hdc, pen));
+	HPEN oldpen = static_cast<HPEN>(::SelectObject(hdc, _lookPen));
 
 	{
 		Utils::DrawLine(hdc, _pos, _lookPos);
@@ -58,13 +64,12 @@ void Monster::Render(HDC hdc)
 	// π는 180도랑 똑같은데, 이게 뭔 소리인가 싶을텐데, π는 숫자로는 3.14... 이다. 이걸로 돌려준다고!
 	// π rad = 3.14... rad = 180도
 
-	// 개선점 : 제공해주는 π가 있지만, 일단은!
-	float angle = radian * 180 / 3.141592f;
+	float angle = radian * 180 / PI;
 
 	// 어, 그런데 180도를 넘어가면 180도에서 줄어드는데요? -> acos의 범위는 0 ~ π 이므로! 여기서 못 벗어난다.
 	// 그래서 180도 이상 돌면, 반대쪽에서 돈 것과 마찬가지인 각도가 된다. 그런데 190도 이상을 원한다면 어떻게 할까?
 	
-	// 1) 개억지. 애초에 내적을 하는 다른 벡터가 y축 위를 향해야만 가능하다. 그래야 x < 0이 180도를 넘는다는 하드코딩임.
+	// 1) 특정 축에 의존하는 방식. 비교 벡터가 y축 위를 향할 때만 x < 0을 이용할 수 있어서 범용적이지 않다.
 
 	//if (monsterToMouseDir.x < 0)
 	//{

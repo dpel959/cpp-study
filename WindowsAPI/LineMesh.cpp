@@ -2,17 +2,26 @@
 #include "LineMesh.h"
 #include <fstream>
 
-void LineMesh::Save(std::wstring path)
+void LineMesh::Save(const std::wstring& path) const
 {
-	std::wofstream file;
-	file.open(path);
+	std::wofstream file(path);
+	if (file.is_open() == false)
+	{
+		return;
+	}
+
+	file << static_cast<int32>(_lines.size()) << '\n';
+	if (_lines.empty())
+	{
+		return;
+	}
 
 	LONG minX = std::numeric_limits<LONG>::max();
 	LONG maxX = std::numeric_limits<LONG>::min();
 	LONG minY = std::numeric_limits<LONG>::max();
 	LONG maxY = std::numeric_limits<LONG>::min();
 
-	for (auto& line : _lines)
+	for (const auto& line : _lines)
 	{
 		POINT from = line.first;
 		POINT to = line.second;
@@ -26,10 +35,7 @@ void LineMesh::Save(std::wstring path)
 	int32 midX = (maxX + minX) / 2;
 	int32 midY = (maxY + minY) / 2;
 
-	// 라인 개수
-	file << static_cast<int32>(_lines.size()) << '\n';
-
-	for (auto& line : _lines)
+	for (const auto& line : _lines)
 	{
 		POINT from = line.first;
 		from.x -= midX; // 자신의 '중앙 좌표'를 빼준다.
@@ -43,40 +49,55 @@ void LineMesh::Save(std::wstring path)
 		file << wstr << '\n';
 	}
 
-	file.close();
 }
 
-void LineMesh::Load(std::wstring path)
+void LineMesh::Load(const std::wstring& path)
 {
-	std::wifstream file;
-	file.open(path);
-
-	int32 count;
-	file >> count;
-
 	_lines.clear();
+	_width = 0;
+	_height = 0;
+
+	std::wifstream file(path);
+	int32 count = 0;
+	if (file.is_open() == false || (file >> count).fail() || count < 0)
+	{
+		return;
+	}
+
+	std::vector<std::pair<POINT, POINT>> loadedLines;
+	loadedLines.reserve(count);
 
 	for (int32 i = 0; i < count; ++i)
 	{
-		POINT pt1, pt2;
+		POINT pt1 = {};
+		POINT pt2 = {};
 
 		std::wstring str;
-		file >> str;
+		if ((file >> str).fail())
+		{
+			return;
+		}
 
-		// 여기에다가 넣어주세요~ 라는 것
-		::swscanf_s(str.c_str(), L"(%d,%d)->(%d,%d)", &pt1.x, &pt1.y, &pt2.x, &pt2.y);
+		if (::swscanf_s(str.c_str(), L"(%d,%d)->(%d,%d)", &pt1.x, &pt1.y, &pt2.x, &pt2.y) != 4)
+		{
+			return;
+		}
 
-		_lines.emplace_back(pt1, pt2);
+		loadedLines.emplace_back(pt1, pt2);
 	}
 
-	file.close();
+	_lines = std::move(loadedLines);
+	if (_lines.empty())
+	{
+		return;
+	}
 
 	LONG minX = std::numeric_limits<LONG>::max();
 	LONG maxX = std::numeric_limits<LONG>::min();
 	LONG minY = std::numeric_limits<LONG>::max();
 	LONG maxY = std::numeric_limits<LONG>::min();
 
-	for (auto& line : _lines)
+	for (const auto& line : _lines)
 	{
 		POINT from = line.first;
 		POINT to = line.second;

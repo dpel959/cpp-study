@@ -10,4 +10,10 @@ public:
 	virtual void Init() override;
 	virtual void Update() override;
 	virtual void Render(HDC hdc) override;
+
+private:
+	HFONT _titleFont = nullptr;
+	HFONT _bodyFont = nullptr;
+	HBRUSH _frameBrush = nullptr;
+	HBRUSH _startBrush = nullptr;
 };

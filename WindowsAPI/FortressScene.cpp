@@ -1,122 +1,272 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "FortressScene.h"
 #include "UIManager.h"
 #include "Player.h"
-#include "LineMesh.h"
+#include "Bullet.h"
 #include "InputManager.h"
-#include "ResourceManager.h"
 #include "ObjectManager.h"
+#include "SceneManager.h"
 #include "TimeManager.h"
+#include <algorithm>
 
-FortressScene::FortressScene()
+namespace
 {
-}
+	RECT GetMiniMapContentRect()
+	{
+		return RECT{
+			GWinSizeX - GMinimapSizeX - GMinimapMargin + 5,
+			GMinimapMargin + GMinimapTitleHeight,
+			GWinSizeX - GMinimapMargin - 5,
+			GMinimapMargin + GMinimapSizeY - 5
+		};
+	}
 
-FortressScene::~FortressScene()
-{
+	POINT WorldToMiniMap(Pos worldPos, const RECT& rect)
+	{
+		const float xRatio = std::clamp(worldPos.x / GWinSizeX, 0.f, 1.f);
+		const float yRatio = std::clamp(worldPos.y / GWinSizeY, 0.f, 1.f);
+		return POINT{
+			rect.left + static_cast<LONG>((rect.right - rect.left) * xRatio),
+			rect.top + static_cast<LONG>((rect.bottom - rect.top) * yRatio)
+		};
+	}
+
+	void DrawMiniMapMarker(HDC hdc, POINT position, COLORREF color, int32 radius)
+	{
+		const COLORREF oldBrushColor = ::SetDCBrushColor(hdc, color);
+		::Ellipse(
+			hdc,
+			position.x - radius,
+			position.y - radius,
+			position.x + radius,
+			position.y + radius);
+		::SetDCBrushColor(hdc, oldBrushColor);
+	}
 }
 
 void FortressScene::Init()
 {
 	GET_SINGLE(UIManager).Init();
+	_terrain.Init();
+	_playerTurn = 1;
+	_sumTime = 0.f;
+	_winnerPlayerId = -1;
 
-	{
-		Player* player = GET_SINGLE(ObjectManager).CreateObject<Player>();
-		player->SetPlayerType(PlayerType::MissileTank);
+	_players[0] = GET_SINGLE(ObjectManager).CreateObject<Player>();
+	_players[0]->SetTerrain(&_terrain);
+	_players[0]->SetPlayerType(PlayerType::MissileTank);
+	_players[0]->SetPos(Vector{ 100.f, 0.f });
+	_players[0]->SetDir(Dir::Right);
+	_players[0]->SetPlayerId(0);
+	_players[0]->SetPlayerTurn(false);
+	_players[0]->SnapToGround();
 
-		GET_SINGLE(ObjectManager).Add(player);
+	_players[1] = GET_SINGLE(ObjectManager).CreateObject<Player>();
+	_players[1]->SetTerrain(&_terrain);
+	_players[1]->SetPlayerType(PlayerType::CanonTank);
+	_players[1]->SetPos(Vector{ 700.f, 0.f });
+	_players[1]->SetDir(Dir::Left);
+	_players[1]->SetPlayerId(1);
+	_players[1]->SetPlayerTurn(false);
+	_players[1]->SnapToGround();
 
-		player->SetPos(Vector{ 100, 400 });
-		player->SetPlayerId(0);
-		player->SetPlayerTurn(true);
-	}
-
-	{
-		Player* player = GET_SINGLE(ObjectManager).CreateObject<Player>();
-		player->SetPlayerType(PlayerType::CanonTank);
-
-		GET_SINGLE(ObjectManager).Add(player);
-
-		player->SetPos(Vector{ 700, 400 });
-		player->SetPlayerId(1);
-		player->SetPlayerTurn(false);
-	}
-
-	ChangePlayerTurn(); // 초기화용
+	ChangePlayerTurn();
 }
 
 void FortressScene::Update()
 {
-	float deltaTime = GET_SINGLE(TimeManager).GetDeltaTime();
-
-	// 개선점 : 삭제될 수 있으므로, 이것도 일단 & 안 붙임.
-	std::vector<Object*> objects = GET_SINGLE(ObjectManager).GetObjects();
-
-	for (auto* object : objects)
+	if (_winnerPlayerId >= 0)
 	{
-		object->Update();
+		if (GET_SINGLE(InputManager).GetButtonDown(KeyType::R))
+		{
+			GET_SINGLE(SceneManager).RestartCurrentScene();
+		}
+		return;
 	}
 
-	_sumTime += deltaTime;
-	if (_sumTime >= 1.f)
+	GET_SINGLE(ObjectManager).Update();
+
+	// 발사 후에는 포탄이 사라질 때까지 턴 타이머를 멈춘다.
+	if (_players[_playerTurn]->GetPlayerTurn() == false)
 	{
-		_sumTime = 0.f;
+		return;
+	}
 
-		int32 time = GET_SINGLE(UIManager).GetRemainTime();
-		time = std::max(0, time - 1);
+	_sumTime += GET_SINGLE(TimeManager).GetDeltaTime();
+	while (_sumTime >= 1.f)
+	{
+		_sumTime -= 1.f;
 
-		GET_SINGLE(UIManager).SetRemainTime(time);
+		const int32 remainTime = std::max(0, GET_SINGLE(UIManager).GetRemainTime() - 1);
+		GET_SINGLE(UIManager).SetRemainTime(remainTime);
 
-		if (time == 0)
+		if (remainTime == 0)
 		{
 			ChangePlayerTurn();
+			break;
 		}
 	}
 }
 
 void FortressScene::Render(HDC hdc)
 {
+	_terrain.Render(hdc);
+	GET_SINGLE(ObjectManager).Render(hdc);
 	GET_SINGLE(UIManager).Render(hdc);
-
-	const std::vector<Object*> objects = GET_SINGLE(ObjectManager).GetObjects();
-	for (Object* object : objects)
-	{
-		object->Render(hdc);
-	}
+	RenderMiniMap(hdc);
+	RenderGameResult(hdc);
 }
 
-// 개선점 : 이것도 플레이어 벡터를 저장해주던가, 혹은 플레이어 수를 저장해주어야할 것이다.
-void FortressScene::ChangePlayerTurn()
+bool FortressScene::ResolveBullet(Bullet* bullet)
 {
-	// round-robin 방식
-	_playerTurn = (_playerTurn + 1) % 2;
-	
-	const std::vector<Object*> objects = GET_SINGLE(ObjectManager).GetObjects();
-
-	// 개선점 : Object를 또 굳이 다 돌아야한다... 이것도 좋지 않은 점
-	// Player임을 확인하고, PlayerId도 확인하고 2중체크를 해야 함.
-	for (Object* object : objects)
+	if (bullet == nullptr)
 	{
-		if (object->GetObjectType() != ObjectType::Player)
+		return false;
+	}
+
+	const Pos bulletPos = bullet->GetPos();
+	const float bulletRadius = bullet->GetRadius();
+	const bool isOutsideScreen =
+		bulletPos.x < -bulletRadius || bulletPos.x > GWinSizeX + bulletRadius ||
+		bulletPos.y < -bulletRadius || bulletPos.y > GWinSizeY + bulletRadius;
+
+	if (isOutsideScreen)
+	{
+		FinishShot(bullet, true);
+		return true;
+	}
+
+	// 탱크는 지면과 맞닿아 있으므로, 지형보다 탱크 충돌을 먼저 판정한다.
+	for (Player* player : _players)
+	{
+		if (player == nullptr || player->GetPlayerId() == bullet->GetOwnerId())
 		{
 			continue;
 		}
 
-		// static_cast로 하는 이유는, 이미 위에서 Player을 걸러줘서. dynamic_cast는 비용이 너무 아깝다.
-		Player* player = static_cast<Player*>(object);
-		if (player->GetPlayerId() == _playerTurn)
+		const Vector distance = player->GetPos() - bulletPos;
+		const float collisionRadius = player->GetRadius() + bulletRadius;
+		if (distance.LengthSquared() > collisionRadius * collisionRadius)
 		{
-			player->SetPlayerTurn(true);
+			continue;
+		}
+
+		player->TakeDamage(GBulletDamage);
+		if (player->IsDead())
+		{
+			_winnerPlayerId = bullet->GetOwnerId();
+			for (Player* turnPlayer : _players)
+			{
+				turnPlayer->SetPlayerTurn(false);
+			}
+			FinishShot(bullet, false);
 		}
 		else
 		{
-			player->SetPlayerTurn(false);
+			FinishShot(bullet, true);
+		}
+		return true;
+	}
+
+	if (_terrain.ContainsX(bulletPos.x) &&
+		bulletPos.y + bulletRadius >= _terrain.GetGroundY(bulletPos.x))
+	{
+		FinishShot(bullet, true);
+		return true;
+	}
+
+	return false;
+}
+
+void FortressScene::ChangePlayerTurn()
+{
+	_playerTurn = (_playerTurn + 1) % static_cast<int32>(_players.size());
+
+	for (Player* player : _players)
+	{
+		player->SetPlayerTurn(player->GetPlayerId() == _playerTurn);
+	}
+
+	_sumTime = 0.f;
+	GET_SINGLE(UIManager).SetRemainTime(GTurnDuration);
+	GET_SINGLE(UIManager).SetStaminaPercent(100.f);
+	GET_SINGLE(UIManager).SetPowerPercent(0.f);
+	GET_SINGLE(UIManager).SetWindPercent(RandomUtils::GetRandomFloat(-100.f, 100.f));
+}
+
+void FortressScene::FinishShot(Bullet* bullet, bool changeTurn)
+{
+	GET_SINGLE(ObjectManager).Remove(bullet);
+	if (changeTurn)
+	{
+		ChangePlayerTurn();
+	}
+}
+
+void FortressScene::RenderMiniMap(HDC hdc) const
+{
+	const RECT mapRect = GetMiniMapContentRect();
+	_terrain.RenderMiniMap(hdc, mapRect);
+
+	HBRUSH stockBrush = static_cast<HBRUSH>(::GetStockObject(DC_BRUSH));
+	HPEN stockPen = static_cast<HPEN>(::GetStockObject(DC_PEN));
+	HBRUSH oldBrush = static_cast<HBRUSH>(::SelectObject(hdc, stockBrush));
+	HPEN oldPen = static_cast<HPEN>(::SelectObject(hdc, stockPen));
+	const COLORREF oldPenColor = ::SetDCPenColor(hdc, RGB(20, 25, 32));
+
+	for (Player* player : _players)
+	{
+		const COLORREF color = player->GetPlayerId() == 0
+			? RGB(70, 190, 225)
+			: RGB(245, 173, 66);
+		DrawMiniMapMarker(hdc, WorldToMiniMap(player->GetPos(), mapRect), color, 3);
+	}
+
+	for (Object* object : GET_SINGLE(ObjectManager).GetObjects())
+	{
+		if (object->GetObjectType() == ObjectType::Projectile)
+		{
+			DrawMiniMapMarker(
+				hdc,
+				WorldToMiniMap(object->GetPos(), mapRect),
+				RGB(245, 245, 245),
+				2);
 		}
 	}
 
-	// 개선점 : 이것도 데이터로 빼야 함..
-	GET_SINGLE(UIManager).SetRemainTime(10);
-	GET_SINGLE(UIManager).SetStaminaPercent(100.f);
-	GET_SINGLE(UIManager).SetPowerPercent(0.f);
-	GET_SINGLE(UIManager).SetWindPercent(RandomUtils::GetRandomFloat(-100, 100));
+	::SetDCPenColor(hdc, oldPenColor);
+	::SelectObject(hdc, oldPen);
+	::SelectObject(hdc, oldBrush);
+}
+
+void FortressScene::RenderGameResult(HDC hdc) const
+{
+	if (_winnerPlayerId < 0)
+	{
+		return;
+	}
+
+	const RECT resultRect = { 220, 190, 580, 310 };
+	HBRUSH stockBrush = static_cast<HBRUSH>(::GetStockObject(DC_BRUSH));
+	HBRUSH oldBrush = static_cast<HBRUSH>(::SelectObject(hdc, stockBrush));
+	const COLORREF oldBrushColor = ::SetDCBrushColor(hdc, RGB(35, 42, 52));
+	::Rectangle(hdc, resultRect.left, resultRect.top, resultRect.right, resultRect.bottom);
+
+	const int32 oldBackgroundMode = ::SetBkMode(hdc, TRANSPARENT);
+	const COLORREF oldTextColor = ::SetTextColor(hdc, RGB(238, 242, 247));
+	RECT textRect = resultRect;
+	const std::wstring message = std::format(
+		L"PLAYER {} WINS!\n\n[R] RESTART",
+		_winnerPlayerId + 1);
+	::DrawTextW(
+		hdc,
+		message.c_str(),
+		static_cast<int32>(message.size()),
+		&textRect,
+		DT_CENTER | DT_VCENTER | DT_WORDBREAK);
+
+	::SetTextColor(hdc, oldTextColor);
+	::SetBkMode(hdc, oldBackgroundMode);
+	::SetDCBrushColor(hdc, oldBrushColor);
+	::SelectObject(hdc, oldBrush);
 }

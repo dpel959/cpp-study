@@ -25,7 +25,7 @@ public:
 	Vector(float x, float y) : x(x), y(y) {}
 	Vector(POINT pt) : x(static_cast<float>(pt.x)), y(static_cast<float>(pt.y)) {}
 
-	Vector operator+ (const Vector& other)
+	Vector operator+ (const Vector& other) const
 	{
 		Vector ret;
 		ret.x = x + other.x;
@@ -33,7 +33,7 @@ public:
 		return ret;
 	}
 
-	Vector operator- (const Vector& other)
+	Vector operator- (const Vector& other) const
 	{
 		Vector ret;
 		ret.x = x - other.x;
@@ -41,7 +41,7 @@ public:
 		return ret;
 	}
 
-	Vector operator* (const float value)
+	Vector operator* (const float value) const
 	{
 		Vector ret;
 		ret.x = value * x;
@@ -63,19 +63,19 @@ public:
 		return *this;
 	}
 
-	Vector operator*= (const float value)
+	Vector& operator*= (const float value)
 	{
 		x *= value;
 		y *= value;
 		return *this;
 	}
 
-	float LengthSquared()
+	float LengthSquared() const
 	{
 		return x * x + y * y;
 	}
 
-	float Length()
+	float Length() const
 	{
 		return ::sqrt(LengthSquared());
 	}
@@ -95,12 +95,12 @@ public:
 		}
 	}
 
-	float Dot(Vector other)
+	float Dot(const Vector& other) const
 	{
 		return (x * other.x + y * other.y);
 	}
 
-	float Cross(Vector other)
+	float Cross(const Vector& other) const
 	{
 		return x * other.y - y * other.x;
 	}

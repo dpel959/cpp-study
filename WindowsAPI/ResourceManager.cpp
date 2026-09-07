@@ -9,44 +9,28 @@ ResourceManager::~ResourceManager()
 
 void ResourceManager::Init()
 {
-	{
-		LineMesh* mesh = new LineMesh();
-		mesh->Load(L"UI.txt");
-		_lineMeshes[L"UI"] = mesh;
-	}
-	{
-		LineMesh* mesh = new LineMesh();
-		mesh->Load(L"Menu.txt");
-		_lineMeshes[L"Menu"] = mesh;
-	}
-	{
-		LineMesh* mesh = new LineMesh();
-		mesh->Load(L"MissileTank.txt");
-		_lineMeshes[L"MissileTank"] = mesh;
-	}
-	{
-		LineMesh* mesh = new LineMesh();
-		mesh->Load(L"CanonTank.txt");
-		_lineMeshes[L"CanonTank"] = mesh;
-	}
+	Clear();
+
+	auto missileTank = std::make_unique<LineMesh>();
+	missileTank->Load(L"MissileTank.txt");
+	_lineMeshes.emplace(L"MissileTank", std::move(missileTank));
+
+	auto canonTank = std::make_unique<LineMesh>();
+	canonTank->Load(L"CanonTank.txt");
+	_lineMeshes.emplace(L"CanonTank", std::move(canonTank));
 }
 
 void ResourceManager::Clear()
 {
-	for (auto mesh : _lineMeshes)
-	{
-		SAFE_DELETE(mesh.second);
-	}
-
 	_lineMeshes.clear();
 }
 
-const LineMesh* ResourceManager::GetLineMesh(std::wstring key)
+const LineMesh* ResourceManager::GetLineMesh(const std::wstring& key) const
 {
 	auto findItr = _lineMeshes.find(key);
 	if (findItr != _lineMeshes.end())
 	{
-		return findItr->second;
+		return findItr->second.get();
 	}
 	else
 	{

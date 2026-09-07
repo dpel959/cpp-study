@@ -22,6 +22,11 @@ void Missile::Update()
 {
 	float deltaTime = GET_SINGLE(TimeManager).GetDeltaTime();
 
+	if (_target != nullptr && GET_SINGLE(ObjectManager).IsAlive(_target) == false)
+	{
+		_target = nullptr;
+	}
+
 	if (_target == nullptr)
 	{
 		_pos.x += _stat.speed * deltaTime * cos(_angle);
@@ -29,8 +34,8 @@ void Missile::Update()
 		_sumTime += deltaTime;
 		if (_sumTime > 0.2f)
 		{
-			// 개선점 : 가장 가까운 놈은 아니다. 그냥 맨 처음 배열에서 만난 놈을 추적하는 것
-			const std::vector<Object*>& objects = GET_SINGLE(ObjectManager).GetObjects();
+			// 이 예제에서는 배열에서 처음 만난 플레이어를 추적 대상으로 삼는다.
+			const std::vector<Object*> objects = GET_SINGLE(ObjectManager).GetObjects();
 			for (Object* object : objects)
 			{
 				if (object->GetObjectType() == ObjectType::Monster)
@@ -50,7 +55,7 @@ void Missile::Update()
 	
 	// 충돌. 유니티나 언리얼같이 어디 반경에 들어오면 감지하고 그런거 없다. 씬 전부를 뒤져봐야한다...
 	
-	// 개선점 : 이거 ㅄ 같이 &로 받아줘야한다. 추가의 영향을 받지 않기 위해...
+	// 조회 결과는 비소유 포인터 목록의 복사본이므로, 순회 중 매니저의 내부 배열이 바뀌어도 반복자가 무효화되지 않는다.
 	const std::vector<Object*> objects = GET_SINGLE(ObjectManager).GetObjects();
 	for (Object* object : objects)
 	{
@@ -76,7 +81,7 @@ void Missile::Update()
 	}
 
 
-	// 개선점 : 화면 끝을 넘어가면 삭제. 이것도 각도를 자유롭게 할 수 있으면 바꿔줘야한다.
+	// 현재 예제에서는 오른쪽 화면 끝을 벗어나면 미사일을 삭제한다.
 	if (_pos.y < -200)
 	{
 		GET_SINGLE(ObjectManager).Remove(this);

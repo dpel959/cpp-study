@@ -21,6 +21,8 @@ public:
 	ObjectType GetObjectType() { return _type; }
 	void SetPos(Pos pos) { _pos = pos; }
 	Pos GetPos() { return _pos; }
+	void SetDir(Dir dir) { _dir = dir; }
+	Dir GetDir() const { return _dir; }
 
 	float GetRadius() { return _radius; }
 	void SetRadius(float radius) { _radius = radius; }

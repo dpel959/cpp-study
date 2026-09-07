@@ -1,5 +1,6 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "ObjectManager.h"
+#include "Object.h"
 #include <algorithm>
 
 ObjectManager::~ObjectManager()
@@ -7,52 +8,141 @@ ObjectManager::~ObjectManager()
 	Clear();
 }
 
-void ObjectManager::Add(Object* object)
+void ObjectManager::Update()
 {
-	if (object == nullptr)
+	_isUpdating = true;
+
+	for (const std::unique_ptr<Object>& object : _objects)
 	{
-		return;
+		if (IsPendingRemove(object.get()))
+		{
+			continue;
+		}
+
+		object->Update();
 	}
 
-	auto findItr = std::find(_objects.begin(), _objects.end(), object);
+	_isUpdating = false;
+	FlushPendingObjects();
+}
 
-	if (findItr == _objects.end())
+void ObjectManager::Render(HDC hdc)
+{
+	for (const std::unique_ptr<Object>& object : _objects)
 	{
-		_objects.push_back(object);
+		object->Render(hdc);
 	}
 }
 
 void ObjectManager::Remove(Object* object)
 {
-	if (object == nullptr)
+	if (object == nullptr || IsPendingRemove(object))
 	{
 		return;
 	}
 
-	// 하나만 지울때는 끝까지 돌지 않는 std::find-erase도 정석적이지만, 
-	// 강의와 차별점 : 순서가 상관없다면 swap-pop이 최고다. 정확히는 여기서는 move-pop이지만.
+	const bool isActive = std::any_of(
+		_objects.begin(),
+		_objects.end(),
+		[object](const std::unique_ptr<Object>& managedObject)
+		{
+			return managedObject.get() == object;
+		});
 
-	// 단, move-pop은 자신을 자신에게 move 할 경우, 원소가 하나일때는 문제가 된다.
-	// 애초에 move를 안 하는 타입이거나 std 지원 컨테이너라면 방지 코드가 있어 상관 없다만,
-	// 사용자 정의 클래스라면 1. 자기 자신을 넣는 것의 예방 코드를 짜던가,
-	// 2. 안전하게 swap-pop을 하던가 해야한다.
+	const bool isPendingAdd = std::any_of(
+		_pendingAddQ.begin(),
+		_pendingAddQ.end(),
+		[object](const std::unique_ptr<Object>& managedObject)
+		{
+			return managedObject.get() == object;
+		});
 
-	auto findItr = std::find(_objects.begin(), _objects.end(), object);
-
-	if (findItr != _objects.end())
+	if (isActive || isPendingAdd)
 	{
-		*findItr = std::move(_objects.back());
+		_pendingRemoveQ.push_back(object);
+	}
 
-		_objects.pop_back();
-
-		delete object;
+	if (_isUpdating == false)
+	{
+		FlushPendingObjects();
 	}
 }
 
 void ObjectManager::Clear()
 {
-	// 강의와 차별점 : 여기 [=]를 붙일 필요가 없다. 람다 '내부'에서는 +objects를 쓰지 않기 때문이다.
-	std::for_each(_objects.begin(), _objects.end(), [](Object* obj) { delete obj; });
-
+	_pendingRemoveQ.clear();
+	_pendingAddQ.clear();
 	_objects.clear();
+}
+
+std::vector<Object*> ObjectManager::GetObjects() const
+{
+	std::vector<Object*> objects;
+	objects.reserve(_objects.size());
+
+	for (const std::unique_ptr<Object>& object : _objects)
+	{
+		if (IsPendingRemove(object.get()) == false)
+		{
+			objects.push_back(object.get());
+		}
+	}
+
+	return objects;
+}
+
+bool ObjectManager::IsAlive(const Object* object) const
+{
+	if (object == nullptr || IsPendingRemove(object))
+	{
+		return false;
+	}
+
+	return std::any_of(
+		_objects.begin(),
+		_objects.end(),
+		[object](const std::unique_ptr<Object>& managedObject)
+		{
+			return managedObject.get() == object;
+		});
+}
+
+void ObjectManager::FlushPendingObjects()
+{
+	for (std::unique_ptr<Object>& object : _pendingAddQ)
+	{
+		_objects.push_back(std::move(object));
+	}
+	_pendingAddQ.clear();
+
+	for (Object* removeTarget : _pendingRemoveQ)
+	{
+		auto findItr = std::find_if(
+			_objects.begin(),
+			_objects.end(),
+			[removeTarget](const std::unique_ptr<Object>& managedObject)
+			{
+				return managedObject.get() == removeTarget;
+			});
+
+		if (findItr == _objects.end())
+		{
+			continue;
+		}
+
+		if (findItr != _objects.end() - 1)
+		{
+			*findItr = std::move(_objects.back());
+		}
+
+		_objects.pop_back();
+	}
+
+	_pendingRemoveQ.clear();
+}
+
+bool ObjectManager::IsPendingRemove(const Object* object) const
+{
+	return std::find(_pendingRemoveQ.begin(), _pendingRemoveQ.end(), object)
+		!= _pendingRemoveQ.end();
 }

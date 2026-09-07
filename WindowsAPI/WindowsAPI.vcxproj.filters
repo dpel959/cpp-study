@@ -80,6 +80,9 @@
     <ClInclude Include="TimeManager.h">
       <Filter>소스 파일\01. Manager</Filter>
     </ClInclude>
+	<ClInclude Include="Terrain.h">
+	  <Filter>소스 파일\03. Objects\Game</Filter>
+	</ClInclude>
     <ClInclude Include="Utils.h">
       <Filter>소스 파일\99. Headers</Filter>
     </ClInclude>
@@ -128,6 +131,15 @@
     <ClInclude Include="Bullet.h">
       <Filter>소스 파일\03. Objects\Game</Filter>
     </ClInclude>
+	<ClInclude Include="GameScene.h">
+	  <Filter>소스 파일\02. Scenes\Game</Filter>
+	</ClInclude>
+	<ClInclude Include="Missile.h">
+	  <Filter>소스 파일\03. Objects\Game</Filter>
+	</ClInclude>
+	<ClInclude Include="Monster.h">
+	  <Filter>소스 파일\03. Objects\Game</Filter>
+	</ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WindowsAPI.rc">
@@ -158,6 +170,9 @@
     <ClCompile Include="TimeManager.cpp">
       <Filter>소스 파일\01. Manager</Filter>
     </ClCompile>
+	<ClCompile Include="Terrain.cpp">
+	  <Filter>소스 파일\03. Objects\Game</Filter>
+	</ClCompile>
     <ClCompile Include="Utils.cpp">
       <Filter>소스 파일\99. Headers</Filter>
     </ClCompile>
@@ -203,5 +218,14 @@
     <ClCompile Include="Bullet.cpp">
       <Filter>소스 파일\03. Objects\Game</Filter>
     </ClCompile>
+	<ClCompile Include="GameScene.cpp">
+	  <Filter>소스 파일\02. Scenes\Game</Filter>
+	</ClCompile>
+	<ClCompile Include="Missile.cpp">
+	  <Filter>소스 파일\03. Objects\Game</Filter>
+	</ClCompile>
+	<ClCompile Include="Monster.cpp">
+	  <Filter>소스 파일\03. Objects\Game</Filter>
+	</ClCompile>
   </ItemGroup>
 </Project>

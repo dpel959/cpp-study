@@ -16,7 +16,7 @@ public:
 protected:
 	float _angle = 0.f;
 	float _sumTime = 0.f;
-	// 개선점 : 당연히 이러면 댕글링 포인터에 너~무 취약하므로 shared_ptr가 맞다!
-	// 이건 잘못된 코드이다. 유도 미사일이면 그 몬스터를 모두가 참조하고 있고, 사라지면 참조할 놈이 없어져버리니까!
+	// ObjectManager가 소유한 대상을 잠시 가리키는 포인터이다.
+	// 사용하기 전에 ObjectManager::IsAlive로 삭제 여부를 확인한다.
 	Object* _target = nullptr;
 };

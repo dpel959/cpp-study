@@ -1,10 +1,10 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "SceneManager.h"
 #include "DevScene.h"
 #include "EditScene.h"
-
 #include "MenuScene.h"
 #include "FortressScene.h"
+#include "ObjectManager.h"
 
 void SceneManager::Init()
 {
@@ -12,56 +12,104 @@ void SceneManager::Init()
 
 void SceneManager::Update()
 {
-	if (_scene)
+	_isUpdating = true;
+
+	if (_scene != nullptr)
 	{
 		_scene->Update();
 	}
+
+	_isUpdating = false;
+	ApplyPendingSceneChange();
 }
 
 void SceneManager::Render(HDC hdc)
 {
-	if (_scene)
+	if (_scene != nullptr)
 	{
 		_scene->Render(hdc);
 	}
 }
 
-void SceneManager::Clear()
-{
-	SAFE_DELETE(_scene);
-}
-
 void SceneManager::ChangeScene(SceneType sceneType)
 {
-	if (_sceneType == sceneType)
+	if (sceneType == SceneType::None)
 	{
 		return;
 	}
 
-	Scene* newScene = nullptr;
+	if (_pendingSceneType == sceneType ||
+		(_pendingSceneType == SceneType::None && _sceneType == sceneType))
+	{
+		return;
+	}
 
+	_pendingSceneType = sceneType;
+
+	if (_isUpdating == false)
+	{
+		ApplyPendingSceneChange();
+	}
+}
+
+void SceneManager::RestartCurrentScene()
+{
+	if (_sceneType == SceneType::None)
+	{
+		return;
+	}
+
+	_pendingSceneType = _sceneType;
+	if (_isUpdating == false)
+	{
+		ApplyPendingSceneChange();
+	}
+}
+
+void SceneManager::Clear()
+{
+	GET_SINGLE(ObjectManager).Clear();
+	_scene.reset();
+	_sceneType = SceneType::None;
+	_pendingSceneType = SceneType::None;
+	_isUpdating = false;
+}
+
+void SceneManager::ApplyPendingSceneChange()
+{
+	if (_pendingSceneType == SceneType::None)
+	{
+		return;
+	}
+
+	const SceneType nextSceneType = _pendingSceneType;
+	_pendingSceneType = SceneType::None;
+
+	std::unique_ptr<Scene> nextScene = CreateScene(nextSceneType);
+	if (nextScene == nullptr)
+	{
+		return;
+	}
+
+	GET_SINGLE(ObjectManager).Clear();
+	_scene = std::move(nextScene);
+	_sceneType = nextSceneType;
+	_scene->Init();
+}
+
+std::unique_ptr<Scene> SceneManager::CreateScene(SceneType sceneType) const
+{
 	switch (sceneType)
 	{
 	case SceneType::DevScene:
-		newScene = new DevScene();
-		break;
+		return std::make_unique<DevScene>();
 	case SceneType::EditScene:
-		newScene = new EditScene();
-		break;
+		return std::make_unique<EditScene>();
 	case SceneType::MenuScene:
-		newScene = new MenuScene();
-		break;
+		return std::make_unique<MenuScene>();
 	case SceneType::FortressScene:
-		newScene = new FortressScene();
-		break;
+		return std::make_unique<FortressScene>();
+	default:
+		return nullptr;
 	}
-
-	// use-after-free 를 막기 위해.
-	// 이 3줄 패턴이 많이 쓰인다. 매크로로 지정해주면 좋다.
-	SAFE_DELETE(_scene);
-
-	_scene = newScene;
-	_sceneType = sceneType;
-
-	newScene->Init();
 }

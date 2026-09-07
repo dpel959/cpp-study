@@ -22,7 +22,8 @@ enum class KeyType : uint8
 	S = 'S',
 	D = 'D',
 	Q = 'Q',
-	E = 'E'
+	E = 'E',
+	R = 'R'
 };
 
 enum class KeyState : uint8
@@ -46,8 +47,12 @@ public:
 	void Init(HWND hwnd);
 	void Update(); 
 
-	// 누르고 있을 때
-	bool GetButton(KeyType key) { return GetState(key) == KeyState::Press; }
+	// 누르고 있는 동안(처음 눌린 프레임 포함)
+	bool GetButton(KeyType key)
+	{
+		const KeyState state = GetState(key);
+		return state == KeyState::Down || state == KeyState::Press;
+	}
 	
 	// 맨 처음 눌렀을때
 	bool GetButtonDown(KeyType key) { return GetState(key) == KeyState::Down; }

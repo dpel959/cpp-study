@@ -13,5 +13,6 @@ public:
 private:
 	Vector _lookPos = {};
 	Vector _lookDir = {};
+	HPEN _lookPen = nullptr;
 };
 

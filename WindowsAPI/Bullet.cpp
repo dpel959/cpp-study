@@ -20,22 +20,16 @@ void Bullet::Init()
 
 void Bullet::Update()
 {
-	float deltaTime = GET_SINGLE(TimeManager).GetDeltaTime();
+	const float deltaTime = GET_SINGLE(TimeManager).GetDeltaTime();
 
-	// 개선점 : 그냥 일직선. 바람도 중력도 없음
-	_pos += _speed * deltaTime;
+	// 강의와 차별점 : 일정 가속도 운동 공식을 사용해 프레임률에 따른 궤적 차이를 줄인다.
+	// 화면 좌표계에서는 오른쪽과 아래쪽이 각각 +X, +Y 방향이다.
+	_pos += _speed * deltaTime + _acceleration * (0.5f * deltaTime * deltaTime);
+	_speed += _acceleration * deltaTime;
 
-	// 개선점 : 화면 벗어났을때 너무 하드함. 그리고 X 적용도 안 됨.
-	if (_pos.y > GWinSizeY * 1.0 || _pos.y < -GWinSizeY * 1.0)
+	FortressScene* scene = dynamic_cast<FortressScene*>(GET_SINGLE(SceneManager).GetCurrentScene());
+	if (scene != nullptr && scene->ResolveBullet(this))
 	{
-		// 다른 플레이어로 바꿔줘!
-		FortressScene* scene = dynamic_cast<FortressScene*>(GET_SINGLE(SceneManager).GetCurrentScene());
-		if (scene != nullptr)
-		{
-			scene->ChangePlayerTurn();
-		}
-
-		GET_SINGLE(ObjectManager).Remove(this);
 		return;
 	}
 }

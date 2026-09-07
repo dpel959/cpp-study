@@ -15,6 +15,30 @@ Game::~Game()
 {
 	GET_SINGLE(SceneManager).Clear();
 	GET_SINGLE(ResourceManager).Clear();
+
+	if (_hdcBack != nullptr)
+	{
+		if (_bmpBackOld != nullptr)
+		{
+			::SelectObject(_hdcBack, _bmpBackOld);
+			_bmpBackOld = nullptr;
+		}
+
+		if (_bmpBack != nullptr)
+		{
+			::DeleteObject(_bmpBack);
+			_bmpBack = nullptr;
+		}
+
+		::DeleteDC(_hdcBack);
+		_hdcBack = nullptr;
+	}
+
+	if (_hwnd != nullptr && _hdc != nullptr)
+	{
+		::ReleaseDC(_hwnd, _hdc);
+		_hdc = nullptr;
+	}
 }
 
 void Game::Init(HWND hwnd)
@@ -35,9 +59,8 @@ void Game::Init(HWND hwnd)
 	// 우리가 원래는 hdc에 있던 걸 바로 그려줬지만, 이번에는 버퍼에 저장해야하기에 비트맵이란 개념이 등장.
 	// 비트맵은 텍스처처럼 정보를 저장하는 존재. 정확히는 얘가 도화지임. DC는 도화지 작업대고. 근데 이 비트맵이 힙에 저장되는 거라 필요 없으면 삭제가 필요함.
 
-	// DC와 BMP를 연결. 리턴은 이전 쓰던 비트맵
-	HBITMAP prev = static_cast<HBITMAP>(::SelectObject(_hdcBack, _bmpBack)); 
-	::DeleteObject(prev); // 이전에 쓰던 건 필요 없으니 잘라줌. 사실 prev는 놔두고 _bmpBack을 삭제하고 갱신하고 하기는 한다.
+	// DC와 BMP를 연결하고, 원래 선택되어 있던 비트맵은 종료할 때 되돌리기 위해 보관한다.
+	_bmpBackOld = static_cast<HBITMAP>(::SelectObject(_hdcBack, _bmpBack));
 
 	GET_SINGLE(TimeManager).Init();
 	GET_SINGLE(InputManager).Init(_hwnd);
@@ -66,8 +89,8 @@ void Game::Render()
 		// std::format은 printf의 단점을 없앤 아주 좋은 문법인데... C++20 부터 지원
 		wstring str = std::format(L"FPS({0}), DT({1} ms)", fps, static_cast<int>(deltaTime * 1000));
 
-		//TextOut이 구닥다리 방식이라 c_str()만 받는다.
-		::TextOut(_hdcBack, 650, 10, str.c_str(), static_cast<int>(str.size()));
+		// TextOut은 C 스타일 문자열을 받으므로 c_str()으로 전달한다.
+		::TextOut(_hdcBack, 10, 10, str.c_str(), static_cast<int>(str.size()));
 
 		//::Rectangle(_hdc, 200, 200, 400, 400);
 	}
@@ -76,7 +99,7 @@ void Game::Render()
 	{
 		POINT mousePos = GET_SINGLE(InputManager).GetMousePos();
 		wstring str = std::format(L"mouse Position = X:({0}), Y:({1})", mousePos.x, mousePos.y);
-		::TextOut(_hdcBack, 200, 10, str.c_str(), static_cast<int>(str.size()));
+		::TextOut(_hdcBack, 10, 30, str.c_str(), static_cast<int>(str.size()));
 	}
 
 	GET_SINGLE(SceneManager).Render(_hdcBack);

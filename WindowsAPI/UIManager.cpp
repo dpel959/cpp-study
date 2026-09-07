@@ -1,24 +1,100 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "UIManager.h"
-#include "InputManager.h"
-#include "TimeManager.h"
-#include "LineMesh.h"
-#include "ResourceManager.h"
+#include <algorithm>
 
-void UIManager::Init()
-{	
-	// 각종 테스트 설정
-	_windPercent = 50;
-	//_powerPercent = 50;
-	_staminaPercent = 40;
-	_remainTime = 7;
-	_playerAngle = 0.f;
-	_barrelAngle = 20.f;
+namespace
+{
+	constexpr COLORREF PanelColor = RGB(35, 42, 52);
+	constexpr COLORREF BorderColor = RGB(103, 116, 137);
+	constexpr COLORREF TextColor = RGB(238, 242, 247);
+	constexpr COLORREF TrackColor = RGB(20, 25, 32);
+
+	void FillRectangle(HDC hdc, const RECT& rect, HBRUSH brush)
+	{
+		::FillRect(hdc, &rect, brush);
+	}
+
+	void DrawOutline(HDC hdc, const RECT& rect, HPEN pen)
+	{
+		HPEN oldPen = static_cast<HPEN>(::SelectObject(hdc, pen));
+		HBRUSH oldBrush = static_cast<HBRUSH>(::SelectObject(hdc, ::GetStockObject(NULL_BRUSH)));
+		::Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
+		::SelectObject(hdc, oldBrush);
+		::SelectObject(hdc, oldPen);
+	}
+
+	void DrawPanel(HDC hdc, const RECT& rect, HBRUSH brush, HPEN pen)
+	{
+		FillRectangle(hdc, rect, brush);
+		DrawOutline(hdc, rect, pen);
+	}
+
+	void DrawLabel(HDC hdc, const RECT& rect, const std::wstring& text, UINT format)
+	{
+		const int32 oldBackgroundMode = ::SetBkMode(hdc, TRANSPARENT);
+		const COLORREF oldTextColor = ::SetTextColor(hdc, TextColor);
+		HFONT font = static_cast<HFONT>(::GetStockObject(DEFAULT_GUI_FONT));
+		HFONT oldFont = static_cast<HFONT>(::SelectObject(hdc, font));
+
+		RECT textRect = rect;
+		::DrawTextW(hdc, text.c_str(), static_cast<int32>(text.size()), &textRect, format);
+
+		::SelectObject(hdc, oldFont);
+		::SetTextColor(hdc, oldTextColor);
+		::SetBkMode(hdc, oldBackgroundMode);
+	}
+
+	void DrawBar(
+		HDC hdc,
+		const RECT& rect,
+		float percent,
+		HBRUSH trackBrush,
+		HBRUSH fillBrush,
+		HPEN borderPen)
+	{
+		FillRectangle(hdc, rect, trackBrush);
+		DrawOutline(hdc, rect, borderPen);
+
+		const float ratio = std::clamp(percent, 0.f, 100.f) / 100.f;
+		RECT fillRect = rect;
+		fillRect.left += 3;
+		fillRect.top += 3;
+		fillRect.right = fillRect.left + static_cast<LONG>((rect.right - rect.left - 6) * ratio);
+		fillRect.bottom -= 3;
+
+		if (fillRect.right > fillRect.left)
+		{
+			FillRectangle(hdc, fillRect, fillBrush);
+		}
+	}
+
+	void DrawColoredLine(HDC hdc, Pos from, Pos to, HPEN pen)
+	{
+		HPEN oldPen = static_cast<HPEN>(::SelectObject(hdc, pen));
+		Utils::DrawLine(hdc, from, to);
+		::SelectObject(hdc, oldPen);
+	}
 }
 
-void UIManager::Render(HDC hdc)
+UIManager::~UIManager()
 {
-	// UI
+	ClearGdiResources();
+}
+
+void UIManager::Init()
+{
+	_windPercent = 0.f;
+	_powerPercent = 0.f;
+	_staminaPercent = 100.f;
+	_playerAngle = 0.f;
+	_barrelAngle = 20.f;
+	_specialWeapon = false;
+	_remainTime = GTurnDuration;
+	CreateGdiResources();
+}
+
+void UIManager::Render(HDC hdc) const
+{
 	RenderBackground(hdc);
 	RenderWind(hdc);
 	RenderPower(hdc);
@@ -29,176 +105,177 @@ void UIManager::Render(HDC hdc)
 	RenderMiniMap(hdc);
 }
 
-void UIManager::RenderBackground(HDC hdc)
+void UIManager::SetWindPercent(float windPercent)
 {
-	const LineMesh* mesh = GET_SINGLE(ResourceManager).GetLineMesh(L"UI");
-	if (mesh)
-		mesh->Render(hdc, Pos{ 0, 0 });
+	_windPercent = std::clamp(windPercent, -100.f, 100.f);
 }
 
-void UIManager::RenderWind(HDC hdc)
+void UIManager::SetPowerPercent(float powerPercent)
 {
-	float minY = 560.0f / 600 * GWinSizeY;
-	float maxY = 575.0f / 600 * GWinSizeY;
-	float avgX = 100.0f / 800 * GWinSizeX;
-	float sizeX = 49.0f / 800 * GWinSizeX;
+	_powerPercent = std::clamp(powerPercent, 0.f, 100.f);
+}
 
-	HBRUSH brush = ::CreateSolidBrush(RGB(50, 198, 74));
-	HBRUSH oldBrush = (HBRUSH)::SelectObject(hdc, brush);
+void UIManager::SetStaminaPercent(float staminaPercent)
+{
+	_staminaPercent = std::clamp(staminaPercent, 0.f, 100.f);
+}
 
-	if (_windPercent < 0)
+void UIManager::SetRemainTime(int32 remainTime)
+{
+	_remainTime = std::max(0, remainTime);
+}
+
+void UIManager::CreateGdiResources()
+{
+	ClearGdiResources();
+	_panelBrush = ::CreateSolidBrush(PanelColor);
+	_trackBrush = ::CreateSolidBrush(TrackColor);
+	_windBrush = ::CreateSolidBrush(RGB(70, 190, 225));
+	_powerBrush = ::CreateSolidBrush(RGB(245, 173, 66));
+	_staminaBrush = ::CreateSolidBrush(RGB(99, 205, 132));
+	_borderPen = ::CreatePen(PS_SOLID, 1, BorderColor);
+	_centerPen = ::CreatePen(PS_SOLID, 1, TextColor);
+	_playerAnglePen = ::CreatePen(PS_SOLID, 2, RGB(155, 165, 180));
+	_barrelAnglePen = ::CreatePen(PS_SOLID, 2, RGB(255, 205, 76));
+}
+
+void UIManager::ClearGdiResources()
+{
+	if (_panelBrush != nullptr) { ::DeleteObject(_panelBrush); _panelBrush = nullptr; }
+	if (_trackBrush != nullptr) { ::DeleteObject(_trackBrush); _trackBrush = nullptr; }
+	if (_windBrush != nullptr) { ::DeleteObject(_windBrush); _windBrush = nullptr; }
+	if (_powerBrush != nullptr) { ::DeleteObject(_powerBrush); _powerBrush = nullptr; }
+	if (_staminaBrush != nullptr) { ::DeleteObject(_staminaBrush); _staminaBrush = nullptr; }
+	if (_borderPen != nullptr) { ::DeleteObject(_borderPen); _borderPen = nullptr; }
+	if (_centerPen != nullptr) { ::DeleteObject(_centerPen); _centerPen = nullptr; }
+	if (_playerAnglePen != nullptr) { ::DeleteObject(_playerAnglePen); _playerAnglePen = nullptr; }
+	if (_barrelAnglePen != nullptr) { ::DeleteObject(_barrelAnglePen); _barrelAnglePen = nullptr; }
+}
+
+void UIManager::RenderBackground(HDC hdc) const
+{
+	DrawPanel(hdc, RECT{ 0, 470, GWinSizeX, GWinSizeY }, _panelBrush, _borderPen);
+}
+
+void UIManager::RenderWind(HDC hdc) const
+{
+	DrawLabel(
+		hdc,
+		RECT{ 125, 482, 275, 502 },
+		std::format(L"WIND  {0:+.0f}", _windPercent),
+		DT_CENTER | DT_SINGLELINE);
+
+	const RECT trackRect = { 150, 507, 250, 527 };
+	FillRectangle(hdc, trackRect, _trackBrush);
+	DrawOutline(hdc, trackRect, _borderPen);
+
+	const LONG centerX = (trackRect.left + trackRect.right) / 2;
+	const float halfWidth = static_cast<float>(trackRect.right - trackRect.left - 6) / 2.f;
+	RECT fillRect = { centerX, trackRect.top + 3, centerX, trackRect.bottom - 3 };
+	const LONG windWidth = static_cast<LONG>(halfWidth * std::abs(_windPercent) / 100.f);
+
+	if (_windPercent < 0.f)
 	{
-		Rectangle(hdc
-			, static_cast<int32>(avgX + sizeX * _windPercent / 100)
-			, static_cast<int32>(minY)
-			, static_cast<int32>(avgX)
-			, static_cast<int32>(maxY));
+		fillRect.left -= windWidth;
 	}
 	else
 	{
-		Rectangle(hdc
-			, static_cast<int32>(avgX)
-			, static_cast<int32>(minY)
-			, static_cast<int32>(avgX + sizeX * _windPercent / 100)
-			, static_cast<int32>(maxY));
+		fillRect.right += windWidth;
 	}
 
+	if (fillRect.right > fillRect.left)
+	{
+		FillRectangle(hdc, fillRect, _windBrush);
+	}
+
+	DrawColoredLine(
+		hdc,
+		Pos{ static_cast<float>(centerX), static_cast<float>(trackRect.top) },
+		Pos{ static_cast<float>(centerX), static_cast<float>(trackRect.bottom) },
+		_centerPen);
+}
+
+void UIManager::RenderPower(HDC hdc) const
+{
+	DrawLabel(
+		hdc,
+		RECT{ 300, 480, 620, 498 },
+		std::format(L"POWER  {0:.0f}%", _powerPercent),
+		DT_LEFT | DT_SINGLELINE);
+	DrawBar(hdc, RECT{ 300, 500, 620, 520 }, _powerPercent, _trackBrush, _powerBrush, _borderPen);
+}
+
+void UIManager::RenderStamina(HDC hdc) const
+{
+	DrawLabel(
+		hdc,
+		RECT{ 300, 525, 620, 543 },
+		std::format(L"STAMINA  {0:.0f}%", _staminaPercent),
+		DT_LEFT | DT_SINGLELINE);
+	DrawBar(hdc, RECT{ 300, 545, 620, 565 }, _staminaPercent, _trackBrush, _staminaBrush, _borderPen);
+}
+
+void UIManager::RenderTime(HDC hdc) const
+{
+	const RECT timeRect = { 680, 490, 770, 560 };
+	DrawPanel(hdc, timeRect, _panelBrush, _borderPen);
+	DrawLabel(
+		hdc,
+		timeRect,
+		std::format(L"TIME\n{:02}", _remainTime),
+		DT_CENTER | DT_VCENTER | DT_WORDBREAK);
+}
+
+void UIManager::RenderAngle(HDC hdc) const
+{
+	const Pos center = { 65.f, 525.f };
+	constexpr float radius = 32.f;
+
+	HPEN oldPen = static_cast<HPEN>(::SelectObject(hdc, _borderPen));
+	HBRUSH oldBrush = static_cast<HBRUSH>(::SelectObject(hdc, ::GetStockObject(NULL_BRUSH)));
+	::Ellipse(
+		hdc,
+		static_cast<int32>(center.x - radius),
+		static_cast<int32>(center.y - radius),
+		static_cast<int32>(center.x + radius),
+		static_cast<int32>(center.y + radius));
 	::SelectObject(hdc, oldBrush);
-	::DeleteObject(brush);
-}
+	::SelectObject(hdc, oldPen);
 
-void UIManager::RenderPower(HDC hdc)
-{
+	auto anglePoint = [center](float angle, float length)
 	{
-		RECT rect = {};
-		rect.left = static_cast<LONG>(265.0f / 800 * GWinSizeX);
-		rect.top = static_cast<LONG>(505.0f / 600 * GWinSizeY);
-		rect.right = static_cast<LONG>(680.0f / 800 * GWinSizeX);
-		rect.bottom = static_cast<LONG>(535.0f / 600 * GWinSizeY);
-		::Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
-	}
+		const float radian = angle * PI / 180.f;
+		return Pos{
+			center.x + length * std::cos(radian),
+			center.y - length * std::sin(radian)
+		};
+	};
 
-	{
-		RECT rect = {};
-		rect.left = static_cast<LONG>(270.0f / 800 * GWinSizeX);
-		rect.top = static_cast<LONG>(510.0f / 600 * GWinSizeY);
-		rect.right = static_cast<LONG>(270.0f / 800 * GWinSizeX + _powerPercent * 4);
-		rect.bottom = static_cast<LONG>(530.0f / 600 * GWinSizeY);
-
-		HBRUSH Brush, oBrush;
-		Brush = ::CreateSolidBrush(RGB(255, 216, 216));
-		oBrush = (HBRUSH)::SelectObject(hdc, Brush);
-
-		::Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
-
-		::SelectObject(hdc, oBrush);
-		::DeleteObject(Brush);
-	}
+	DrawColoredLine(hdc, center, anglePoint(_playerAngle, 25.f), _playerAnglePen);
+	DrawColoredLine(hdc, center, anglePoint(_barrelAngle, 29.f), _barrelAnglePen);
 }
 
-void UIManager::RenderStamina(HDC hdc)
+void UIManager::RenderWeaponChoice(HDC hdc) const
 {
-	{
-		RECT rect = {};
-		rect.left = static_cast<LONG>(265.0f / 800 * GWinSizeX);
-		rect.top = static_cast<LONG>(538.0f / 600 * GWinSizeY);
-		rect.right = static_cast<LONG>(680.0f / 800 * GWinSizeX);
-		rect.bottom = static_cast<LONG>(568.0f / 600 * GWinSizeY);
-		::Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
-	}
-	{
-		RECT rect = {};
-		rect.left = static_cast<long>(270.0f / 800 * GWinSizeX);
-		rect.top = static_cast<long>(543.0f / 600 * GWinSizeY);
-
-		rect.right = static_cast<long>(270.0f / 800 * GWinSizeX + _staminaPercent * 4);
-
-		rect.bottom = static_cast<long>(563.0f / 600 * GWinSizeY);
-
-		HBRUSH brush = ::CreateSolidBrush(RGB(250, 236, 197));
-		HBRUSH oldBrush = (HBRUSH)::SelectObject(hdc, brush);
-
-		::Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
-
-		::SelectObject(hdc, oldBrush);
-		::DeleteObject(brush);
-	}
+	DrawLabel(
+		hdc,
+		RECT{ 115, 545, 275, 570 },
+		_specialWeapon ? L"WEAPON: SPECIAL" : L"WEAPON: NORMAL",
+		DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 }
 
-void UIManager::RenderTime(HDC hdc)
+void UIManager::RenderMiniMap(HDC hdc) const
 {
-	HFONT myFont = ::CreateFont(
-		30						// 높이
-		, 0						// 폭 0이면 높이와 비례
-		, 0						// 글자 전체 기울기
-		, 0						// 기준선이 정해진 기울기
-		, 0						// 폰트의 두께
-		, 0						// 이탤릭
-		, 0						// 밑줄
-		, 0						// 취소선
-		, DEFAULT_CHARSET		// 케릭터 셋
-		, 0						// 정밀도
-		, 0						// 정밀도
-		, 0						// 정밀도
-		, 0						// 정밀도
-		, L"궁서체"				// 글꼴이름
-	);
-
-	HFONT oldFont = (HFONT)::SelectObject(hdc, myFont);
-
-	WCHAR message[100];
-	::wsprintf(message, L"%02d", static_cast<int32>(_remainTime));
-
-	::TextOut(hdc, 728, 510, message, ::lstrlen(message));
-	::SelectObject(hdc, oldFont);
-	::DeleteObject(myFont);
-}
-
-void UIManager::RenderAngle(HDC hdc)
-{
-	::MoveToEx(hdc, 96, 520, nullptr);
-	::Ellipse(hdc, 96 - 35, 520 - 35, 96 + 35, 520 + 35);
-
-	::MoveToEx(hdc, 96, 520, nullptr);
-	::LineTo(hdc
-		, static_cast<int32>(96 + 30 * ::cos(_playerAngle * PI / 180))
-		, static_cast<int32>(520 - 30 * ::sin(_playerAngle * PI / 180)));
-
-	HPEN MyPen = ::CreatePen(PS_SOLID, 0, RGB(204, 61, 61));
-	HPEN pOldPen = (HPEN)::SelectObject(hdc, MyPen);
-
-	::MoveToEx(hdc, 96, 520, nullptr);
-
-	::LineTo(hdc
-		, static_cast<int32>(96 + 30 * ::cos(_barrelAngle * PI / 180))
-		, static_cast<int32>(520 + -30 * ::sin(_barrelAngle * PI / 180)));
-
-	::SelectObject(hdc, pOldPen);
-	::DeleteObject(MyPen);
-}
-
-void UIManager::RenderWeaponChoice(HDC hdc)
-{
-	HBRUSH brush = ::CreateSolidBrush(RGB(255, 0, 0));
-	HBRUSH oldBrush = (HBRUSH)::SelectObject(hdc, brush);
-
-	if (_specialWeapon == false)
-		::Rectangle(hdc, 20 - 5, 550 - 5, 20 + 5, 550 + 5);
-	else
-		::Rectangle(hdc, 170 - 5, 550 - 5, 170 + 5, 550 + 5);
-
-	::SelectObject(hdc, oldBrush);
-	::DeleteObject(brush);
-}
-
-void UIManager::RenderMiniMap(HDC hdc)
-{
-	float ratioX = static_cast<float>(GMinimapSizeX) / static_cast<float>(1280);
-	float ratioY = static_cast<float>(GMinimapSizeY) / static_cast<float>(720);
-
-	// 미니맵 범위
-	RECT rect = { GWinSizeX - GMinimapSizeX - 10, 10, GWinSizeX - 10, 10 + GMinimapSizeY };
-
-	// 미니맵 테두리
-	::Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
+	const RECT minimapRect = {
+		GWinSizeX - GMinimapSizeX - GMinimapMargin,
+		GMinimapMargin,
+		GWinSizeX - GMinimapMargin,
+		GMinimapMargin + GMinimapSizeY
+	};
+	DrawPanel(hdc, minimapRect, _panelBrush, _borderPen);
+	DrawLabel(
+		hdc,
+		RECT{ minimapRect.left, minimapRect.top + 2, minimapRect.right, minimapRect.top + GMinimapTitleHeight },
+		L"MINIMAP",
+		DT_CENTER | DT_SINGLELINE);
 }

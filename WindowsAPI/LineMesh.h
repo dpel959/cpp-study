@@ -4,8 +4,8 @@
 class LineMesh : public ResourceBase
 {
 public:
-	void Save(std::wstring path);
-	void Load(std::wstring path);
+	void Save(const std::wstring& path) const;
+	void Load(const std::wstring& path);
 
 	void Render(HDC hdc, Pos pos, float ratioX = 1.f, float ratioY = 1.f) const;
 
